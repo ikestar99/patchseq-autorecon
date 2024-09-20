@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import numpy as np
 from neurotorch.nets.RSUNetMulti import RSUNetMulti
 from neurotorch.core.predictor_multilabel import Predictor

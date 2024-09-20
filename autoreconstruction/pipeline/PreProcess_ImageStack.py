@@ -1,53 +1,57 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import pandas as pd
 import cv2
 import shutil
-import argschema as ags
 import natsort
 import numpy as np
-from tifffile import imsave, imread
+import tifffile as tif
 import psutil
 
-class InputSchema(ags.ArgSchema):
-
-    specimen_id = ags.fields.Str(description='specimen id')
-    raw_single_tif_dir = ags.fields.InputDir(description="A directory with individual tif files (z-slices)")
-    specimen_dir = ags.fields.InputDir(default=None,description="Directory for specimen output files. If none, use basedir of raw_single_tif_dir")
-    invert_image_color = ags.fields.Boolean(default=True,description="Neural network will expect inverted (black background) images")
-
-def stack_into_chunks(chunk_size,raw_single_tif_dir,chunk_dir,ids):
+def stack_into_chunks(chunk_size, raw_single_tif_dir, chunk_dir, ids):
     """
-    Will stack a directory of single tif images into one 3d volume tif image. Assumes the stacks are named in
-    chronological order.
+    Will stack a directory of single tif images into one 3d volume tif image.
+    Assumes the stacks are named in chronological order.
 
     :param chunk_size: integer. number of tif slices per 3d chunk
-    :param raw_single_tif_dir: input directory that has the individual slices of tif images
+    :param raw_single_tif_dir: input directory, individual tif images
     :param chunk_dir: where to save the 3d tif files
     :param ids: specimen id
     :return:
     """
-
     chunk_n = 0
     counter = 0
     cv_stack = []
-    list_of_files = [ii for ii in natsort.natsorted(os.listdir(raw_single_tif_dir)) if '.tif' in ii]
+    list_of_files = [
+        ii for ii in natsort.natsorted(os.listdir(raw_single_tif_dir))
+        if '.tif' in ii]
     # print('{} Stacking slices into 3D tif chunks'.format(ids))
     for files in list_of_files:
         counter+=1
         # print(files,counter)
-        img = cv2.imread(os.path.join(raw_single_tif_dir,files),cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(
+            os.path.join(raw_single_tif_dir,files),cv2.IMREAD_UNCHANGED)
         cv_stack.append(img)
         if counter == chunk_size:
             chunk_n+=1
             cv_stack = np.asarray(cv_stack)
-            imsave(os.path.join(chunk_dir,'chunk{}.tif'.format(chunk_n)),cv_stack)
+            tif.imwrite(
+                os.path.join(chunk_dir,'chunk{}.tif'.format(chunk_n)),cv_stack)
             cv_stack = []
             counter = 0
-    #if the number of single tif files was a multiple of the chunk_size (usually unlikely)
+
+    # if number of tif files is a multiple of the chunk_size (usually unlikely)
     if (float(len(list_of_files))/float(chunk_size)).is_integer():
-        print('{} files, {} chunk size'.format(len(list_of_files),chunk_size))
+        print(f'{len(list_of_files)} files, {chunk_size} chunk size')
         print('The Last Chunk was a multiple of {}'.format(chunk_size))
-    #otherwise make one last chunk that has overlap so that we ensure all 3d chunks have cnosistent z-dimension
+    # otherwise make one last chunk that has overlap so that we ensure all 3d chunks have consistent z-dimension
     else:
         chunk_n+=1
         last_counter = 0
@@ -58,7 +62,7 @@ def stack_into_chunks(chunk_size,raw_single_tif_dir,chunk_dir,ids):
             last_cv_stack.append(last_img)
             if last_counter == chunk_size:
                 last_cv_stack = np.asarray(last_cv_stack)
-                imsave(os.path.join(chunk_dir,'chunk{}.tif'.format(chunk_n)),last_cv_stack)
+                tif.imwrite(os.path.join(chunk_dir,'chunk{}.tif'.format(chunk_n)),last_cv_stack)
 
 
 def check_for_size_limit(chunk_dir):
@@ -325,8 +329,8 @@ def process_specimen(ids,specimen_dir,raw_single_tif_dir,invert_image_color):
 
 def dir_to_mip(indir,ofile,mip_axis=2):
     """
-    From a directory of single tif files, will create a maximum intensity projection (mip) along certain axis
-    example: if mip_axis=2 creates xy mip
+    From a directory of single tif files, will create a maximum intensity
+    projection (mip) along certain axis example: if mip_axis=2 creates xy mip
     """
 
     indir_files = os.listdir(indir)
@@ -344,22 +348,24 @@ def dir_to_mip(indir,ofile,mip_axis=2):
         full_img[:,:,ct] = img
 
     mip_z_axis = np.max(full_img, axis=mip_axis).astype(data_type)
-    imsave(ofile,mip_z_axis)
+    tif.imwrite(ofile,mip_z_axis)
 
 
-def main(specimen_id, raw_single_tif_dir, specimen_dir, invert_image_color, **kwargs):
-
-    if not specimen_dir:
+def main(
+        specimen_id,
+        raw_single_tif_dir,
+        specimen_dir,
+        invert_image_color,
+        **kwargs
+):
+    if specimen_dir is None:
         specimen_dir = os.path.dirname(raw_single_tif_dir)
 
-    returned_error_list = process_specimen(specimen_id,specimen_dir, raw_single_tif_dir, invert_image_color)
-    if returned_error_list!=[]:
+    returned_error_list = process_specimen(
+        specimen_id,specimen_dir, raw_single_tif_dir, invert_image_color)
+    if len(returned_error_list) >= 1:
         print("error occured in preprocessing:")
         print(returned_error_list)
 
     else:
         print("Image Preprocessing Completed Without Error")
-
-if __name__ == "__main__":
-	module = ags.ArgSchemaParser(schema_type=InputSchema)
-	main(**module.args)

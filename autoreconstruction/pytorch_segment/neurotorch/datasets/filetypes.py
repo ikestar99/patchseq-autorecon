@@ -1,4 +1,4 @@
-from neurotorch.datasets.dataset import Volume, Array, Data
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Volume, Array, Data
 from neurotorch.datasets.datatypes import BoundingBox, Vector
 from abc import abstractmethod
 import fnmatch
