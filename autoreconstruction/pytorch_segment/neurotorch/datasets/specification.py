@@ -1,9 +1,21 @@
-from neurotorch.datasets.dataset import (AlignedVolume, Array, PooledVolume)
-from neurotorch.datasets.filetypes import (TiffVolume, Hdf5Volume)
-from neurotorch.datasets.datatypes import (BoundingBox, Vector)
-from abc import (ABC, abstractmethod)
-import json
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
+import json
+from abc import ABC, abstractmethod
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import (
+    AlignedVolume, Array, PooledVolume)
+from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import (
+    TiffVolume, Hdf5Volume)
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+    BoundingBox, Vector)
 
 
 class Spec(ABC):
@@ -41,6 +53,7 @@ class Spec(ABC):
                 return pooled_volume
 
             else:
+                volume_type = filename[filename.rindex("."):]
                 error_string = "{} is an unsupported filetype".format(volume_type)
                 raise ValueError(error_string)
 

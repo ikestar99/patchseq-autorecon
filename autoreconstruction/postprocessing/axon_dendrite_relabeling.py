@@ -1,27 +1,31 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@author: ike
+"""
+
+
 import os
 import numpy as np
 import pandas as pd
-import psycopg2
-import argschema as ags
-from neuron_morphology.morphology import Morphology
-from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
-from sklearn.neighbors import KDTree
-from scipy.spatial.distance import euclidean
-from skimage.morphology import ball
-from collections import deque
-import tifffile as tif
 import copy
-import shutil
 import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import shutil
+import psycopg2
+import tifffile as tif
 
-class LayerSchema(ags.ArgSchema):
-    specimen_id = ags.fields.Integer(default=0, description = 'Specimen ID')
-    input_dir = ags.fields.InputDir(description = 'Input auto swc directory')
-    output_dir = ags.fields.OutputDir(description = 'Output directory')
-    model_file = ags.fields.InputFile(description='Model file')
+from sklearn.neighbors import KDTree
+from scipy.spatial.distance import euclidean
+from skimage.morphology import ball
+from collections import deque
+
+from neuron_morphology.morphology import Morphology
+from neuron_morphology.swc_io import morphology_from_swc, morphology_to_swc
+
 
 class Net(nn.Module):
     def __init__(self, dim1, dim2, dim3, dim4, ch_count1, ch_count2, ch_count3, conv_ksize1,
@@ -528,7 +532,13 @@ def relabel_swc(sp, outdir, threshold=0.6):
 
     morphology_to_swc(morph_out, os.path.join(outdir, '%d.swc'%sp))
     
-def main(specimen_id, input_dir, output_dir, model_file, **kwargs):    
+def main(specimen_id, input_dir, output_dir, model_file, **kwargs):
+    """
+    specimen_id = ags.fields.Integer(default=0, description = 'Specimen ID')
+    input_dir = ags.fields.InputDir(description = 'Input auto swc directory')
+    output_dir = ags.fields.OutputDir(description = 'Output directory')
+    model_file = ags.fields.InputFile(description='Model file')
+    """
     # try:
     tm1 = time.time()
     # Download stack from LIMS
@@ -581,7 +591,3 @@ def main(specimen_id, input_dir, output_dir, model_file, **kwargs):
     print('time (s)', tm2 - tm1)
     # except:
         # print('Error running %d'%specimen_id) 
-
-if __name__ == "__main__":
-	module = ags.ArgSchemaParser(schema_type=LayerSchema)
-	main(**module.args)

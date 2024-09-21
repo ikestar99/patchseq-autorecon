@@ -1,7 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import torch
-from torch.autograd import Variable
 import numpy as np
-from neurotorch.datasets.dataset import Data
+
+from torch.autograd import Variable
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Data
 
 
 class Predictor:
@@ -11,6 +21,7 @@ class Predictor:
     def __init__(self, net, checkpoint, gpu_device=None):
         self.setNet(net, gpu_device=gpu_device)
         self.loadCheckpoint(checkpoint)
+        self.device
 
     def setNet(self, net, gpu_device=None):
         self.device = torch.device("cuda:{}".format(gpu_device)

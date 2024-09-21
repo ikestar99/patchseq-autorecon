@@ -1,8 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import torch
-from torch.autograd import Variable
 import numpy as np
+
 from scipy.special import softmax
-from neurotorch.datasets.dataset import Data
+from torch.autograd import Variable
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Data
 
 
 class Predictor:

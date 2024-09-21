@@ -1,11 +1,21 @@
-import torch
-import torch.optim as optim
-import torch.nn as nn
-from torch.autograd import Variable
-import torch.cuda
-import numpy as np
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.cuda
+import torch.optim as optim
 import logging
+
+from torch.autograd import Variable
+
 
 class Trainer(object):
     """

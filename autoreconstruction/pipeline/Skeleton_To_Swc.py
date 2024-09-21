@@ -1,28 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@author: ike
+"""
+
+
+import os
+import cv2
+import math
 import numpy as np
-import pandas as pd 
-from collections import deque
+import pandas as pd
+import shutil
 import tifffile as tif
 import itertools
-from operator import add
-import os
-import argschema as ags
-from collections import defaultdict
-from tifffile import imsave
-import cv2
-import shutil
-from scipy.ndimage import label, morphology, generate_binary_structure
-from scipy.spatial import distance
-from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
-import math
 
-class LayerSchema(ags.ArgSchema):
-    specimen_id = ags.fields.Int(description='specimen id')
-    specimen_dir = ags.fields.InputDir(description = 'Specimens Directory')
-    remove_intermediate_files = ags.fields.Boolean(default=False,description='as this is the last step of pipeline, this flag will remove all intermediate images generated')
-    max_stack_size = ags.fields.Int(default = 7000000000, description='maximum size of image stack to load at once (in bytes)')
-    minimum_soma_area_pixels = ags.fields.Int(default=500,description='minimum xy area (in pixels^2) of expected soma. This is used in identifying the soma from channel 1 segmentation')
-    soma_connection_threshold = ags.fields.Int(default=100,description='all individual connected components within this distance from the soma centroid will be connected as a soma stem')
+from operator import add
+from scipy.spatial import distance
+from scipy.ndimage import label, morphology, generate_binary_structure
+from collections import deque, defaultdict
+
 
 def stitch_skeleton_dir(specimen_dir,skeleton_dir):
     """
@@ -49,7 +47,7 @@ def stitch_skeleton_dir(specimen_dir,skeleton_dir):
         left_img = cv2.imread(left_img_path,cv2.IMREAD_UNCHANGED)
         right_img = cv2.imread(right_img_path,cv2.IMREAD_UNCHANGED)
         combined_img = np.append(left_img,right_img,axis=1)
-        imsave(os.path.join(skeleton_dir,img),combined_img)
+        tif.imwrite(os.path.join(skeleton_dir,img),combined_img)
 
 def assign_parent_child_relation(start_node, start_nodes_parent, parent_dict, neighbors_dict):
     """
@@ -189,6 +187,13 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
                                     soma from channel 1 segmentation
     :param soma_connection_threshold: maximum distance from soma a segment will be consider a stem from the soma
     :return: None
+
+    specimen_id = ags.fields.Int(description='specimen id')
+    specimen_dir = ags.fields.InputDir(description = 'Specimens Directory')
+    remove_intermediate_files = ags.fields.Boolean(default=False,description='as this is the last step of pipeline, this flag will remove all intermediate images generated')
+    max_stack_size = ags.fields.Int(default = 7000000000, description='maximum size of image stack to load at once (in bytes)')
+    minimum_soma_area_pixels = ags.fields.Int(default=500,description='minimum xy area (in pixels^2) of expected soma. This is used in identifying the soma from channel 1 segmentation')
+    soma_connection_threshold = ags.fields.Int(default=100,description='all individual connected components within this distance from the soma centroid will be connected as a soma stem')
     """
 
     print('Starting To Process {}'.format(sp_id))
@@ -715,7 +720,7 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
                 # find node closest to soma
                 dist_dict = {}
                 for coord in full_neighbors_dict[conn_comp].keys():
-                    dist_to_soma = euclidean(centroid,coord)
+                    dist_to_soma = distance.euclidean(centroid,coord)
                     dist_dict[coord] = dist_to_soma
                 start_node = min(dist_dict, key=dist_dict.get)
                 while len(full_neighbors_dict[conn_comp][start_node])>1:###REMOVE CYCLE
@@ -739,7 +744,7 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
             else:
                 dist_dict = {}
                 for coord in leaf_nodes:
-                    dist_to_soma = euclidean(centroid,coord)
+                    dist_to_soma = distance.euclidean(centroid,coord)
                     dist_dict[coord] = dist_to_soma
                 #start node is the leaf node that is closest to the soma
                 start_node = min(dist_dict, key=dist_dict.get)
@@ -826,13 +831,3 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
                 shutil.rmtree(full_dir_name)
     #
     #
-
-def main(specimen_id,specimen_dir,remove_intermediate_files, max_stack_size, minimum_soma_area_pixels, soma_connection_threshold, **kwargs):
-
-    skeleton_to_swc_parallel(specimen_id,specimen_dir,remove_intermediate_files,max_stack_size,minimum_soma_area_pixels,soma_connection_threshold)
-
-
-
-if __name__ == "__main__":
-	module = ags.ArgSchemaParser(schema_type=LayerSchema)
-	main(**module.args)

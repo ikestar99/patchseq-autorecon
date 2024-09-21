@@ -1,14 +1,34 @@
-from neurotorch.datasets.specification import JsonSpec
-from neurotorch.core.trainer_multilabel import Trainer
-from neurotorch.nets.RSUNetMulti import RSUNetMulti
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import numpy as np
 import torch
 import torch.optim as optim
-import argparse
 import random
 
+from autoreconstruction.pytorch_segment.neurotorch.datasets.specification import JsonSpec
+from autoreconstruction.pytorch_segment.neurotorch.core.trainer_multilabel import Trainer
+from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
+
+
 def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks, augmentation, pia_dir):
+    """
+    parser.add_argument('--ckpt', '-ck', type=str, help='path to checkpoint')
+    parser.add_argument('--ckpt_dir', '-c', type=str, help='directory to save checkpoint')
+    parser.add_argument('--log_dir', '-l', type=str, help='directory to save logs')
+    parser.add_argument('--json_dir', '-j', type=str, help='directory of json files')
+    parser.add_argument('--eps', '-e', type=float, default=1e-1)
+    parser.add_argument('--epochs', '-ep', type=int, default=10)
+    parser.add_argument('--num_stacks', '-n', type=int, default=3)
+    parser.add_argument('--augmentation', '-a', type=int, default=0, help='1-true 0-false')
+    parser.add_argument('--pia_dir', '-p', type=str, help='directory of json files')
+    """
     inputs_list = [f for f in os.listdir(json_dir) if 'inputs' in f]
     inputs_list.sort()
     labels_list = [f for f in os.listdir(json_dir) if 'labels' in f]
@@ -181,18 +201,4 @@ def augment(inputs_volume, labels_volume):
         else:
             inputs_volume[l] = np.rot90(inputs_volume[l],r,axes=(1,2))
             labels_volume[l] = np.rot90(labels_volume[l],r,axes=(1,2))
-    return inputs_volume, labels_volume        
-
-if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt', '-ck', type=str, help='path to checkpoint')
-    parser.add_argument('--ckpt_dir', '-c', type=str, help='directory to save checkpoint')
-    parser.add_argument('--log_dir', '-l', type=str, help='directory to save logs')
-    parser.add_argument('--json_dir', '-j', type=str, help='directory of json files')
-    parser.add_argument('--eps', '-e', type=float, default=1e-1)
-    parser.add_argument('--epochs', '-ep', type=int, default=10)
-    parser.add_argument('--num_stacks', '-n', type=int, default=3)
-    parser.add_argument('--augmentation', '-a', type=int, default=0, help='1-true 0-false')
-    parser.add_argument('--pia_dir', '-p', type=str, help='directory of json files')
-    args = parser.parse_args()
-    train(args.ckpt, args.ckpt_dir, args.log_dir, args.json_dir, args.eps, args.epochs, args.num_stacks, args.augmentation, args.pia_dir)
+    return inputs_volume, labels_volume

@@ -6,25 +6,21 @@ Created on Thur Sep 19 09:00:00 2024
 """
 
 
-import numpy as np
-from neurotorch.nets.RSUNetMulti import RSUNetMulti
-from neurotorch.core.predictor_multilabel import Predictor
-from neurotorch.datasets.filetypes import TiffVolume
-from neurotorch.datasets.dataset import Array
-from neurotorch.datasets.datatypes import (BoundingBox, Vector)
-import tifffile as tif
 import os
-import natsort
+import numpy as np
 import pandas as pd
-from datetime import date
-import argschema as ags
+import natsort
+import tifffile as tif
 
-class InputSchema(ags.ArgSchema):
-    ckpt = ags.fields.InputFile(description='checkpoint file to use for segmentation ')
-    specimen_dir = ags.fields.InputDir(description="specimen directory")
-    specimen_id = ags.fields.Str(default=None,description="specimen id")
-    gpu = ags.fields.Int(default=0, description = "gpu to use")
-    raw_single_tif_dir = ags.fields.InputDir(description='raw image directory')
+from datetime import date
+
+from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
+from autoreconstruction.pytorch_segment.neurotorch.core.predictor_multilabel import Predictor
+from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+    BoundingBox, Vector)
+
 
 def validate(checkpoint, specimen_dir, chunk_dir, raw_single_tif_dir,  bb, ids, error_list, gpu):
     """
@@ -94,11 +90,10 @@ def validate(checkpoint, specimen_dir, chunk_dir, raw_single_tif_dir,  bb, ids, 
                         #print('Prob Map Shape= ', probability_map.shape[0])
                         count[ch] +=1
                         tif.imsave(os.path.join(ch_dir,'%03d.tif'%(count[ch])), probability_map[i,:,:])                             
-    else:#except:
-        print('error with segmentation')
-        error_list.append(str(ids)+ ' -segmentation')  
-    
-     
+    # else:#except:
+    #     print('error with segmentation')
+    #     error_list.append(str(ids)+ ' -segmentation')
+
     #Step 3. Remove Duplicate Files if necessary 
     try:
         
@@ -133,7 +128,13 @@ def validate(checkpoint, specimen_dir, chunk_dir, raw_single_tif_dir,  bb, ids, 
 
 
 def main(ckpt, specimen_dir, raw_single_tif_dir, specimen_id, gpu, **kwargs ):
-
+    """
+    ckpt = ags.fields.InputFile(description='checkpoint file to use for segmentation ')
+    specimen_dir = ags.fields.InputDir(description="specimen directory")
+    specimen_id = ags.fields.Str(default=None,description="specimen id")
+    gpu = ags.fields.Int(default=0, description = "gpu to use")
+    raw_single_tif_dir = ags.fields.InputDir(description='raw image directory')
+    """
     today = date.today()
     todays_date = today.strftime("%b_%d_%Y")
 
@@ -154,7 +155,6 @@ def main(ckpt, specimen_dir, raw_single_tif_dir, specimen_id, gpu, **kwargs ):
         validate(ckpt, specimen_dir, chunk_dir_left, raw_single_tif_dir, bb_l, specimen_id, [], gpu)
         validate(ckpt, specimen_dir, chunk_dir_right, raw_single_tif_dir, bb_r, specimen_id, [], gpu)
 
-
     else:
         #chunk dir
         chunk_dir = os.path.join(specimen_dir,'Chunks_of_32')
@@ -166,7 +166,3 @@ def main(ckpt, specimen_dir, raw_single_tif_dir, specimen_id, gpu, **kwargs ):
 
         #validate
         validate(ckpt, specimen_dir, chunk_dir, raw_single_tif_dir, bb, specimen_id, [], gpu)
-
-if __name__ == "__main__":
-	module = ags.ArgSchemaParser(schema_type=InputSchema)
-	main(**module.args)

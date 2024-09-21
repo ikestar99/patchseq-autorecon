@@ -1,17 +1,21 @@
-import numpy as np
-import tifffile as tif
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
-import natsort
+import numpy as np
 import pandas as pd
-from skimage.morphology import remove_small_objects, skeletonize_3d
+import natsort
+import tifffile as tif
+
 from scipy import ndimage as ndi
-import argschema as ags
+from skimage.morphology import remove_small_objects, skeletonize_3d
+from datetime import date
 
-
-class InputSchema(ags.ArgSchema):
-    specimen_dir = ags.fields.InputDir(description=" ")
-    specimen_id = ags.fields.Str(default=None,description=" ")
-    intensity_threshold = ags.fields.Int(default=50, description = "50 for spiny 252 for aspiny")
 
 def load_stack(input_dir):
     """
@@ -332,7 +336,12 @@ def postprocess(specimen_dir, indir, ids, error_list, intensity_threshold, thres
     return error_list
 
 
-def main(specimen_dir,specimen_id,intensity_threshold,**kwargs):
+def main(specimen_dir, specimen_id, intensity_threshold, **kwargs):
+    """
+    specimen_dir = ags.fields.InputDir(description=" ")
+    specimen_id = ags.fields.Str(default=None,description=" ")
+    intensity_threshold = ags.fields.Int(default=50, description = "50 for spiny 252 for aspiny")
+    """
 
     error_list = []
     error_list_2 = []
@@ -345,16 +354,9 @@ def main(specimen_dir,specimen_id,intensity_threshold,**kwargs):
         res_l = postprocess(specimen_dir, indir_left, specimen_id, error_list,intensity_threshold)
         res_r = postprocess(specimen_dir, indir_right, specimen_id, error_list_2,intensity_threshold)
 
-
     else:
         indir = os.path.join(specimen_dir,'Segmentation')
         print('indir:', indir)
 
         # postprocess
         res = postprocess(specimen_dir, indir, specimen_id, error_list, intensity_threshold)
-
-
-
-if __name__ == "__main__":
-	module = ags.ArgSchemaParser(schema_type=InputSchema)
-	main(**module.args)

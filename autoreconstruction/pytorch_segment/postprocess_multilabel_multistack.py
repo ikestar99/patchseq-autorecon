@@ -1,15 +1,24 @@
-from multiprocessing import Pool
-import numpy as np
-import tifffile as tif
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import glob
-import argparse
-import natsort
-import pandas as pd
-from skimage.morphology import remove_small_objects, skeletonize_3d
-from scipy import ndimage as ndi
-from datetime import datetime
+import numpy as np
 import torch
+import pandas as pd
+import natsort
+import tifffile as tif
+
+from scipy import ndimage as ndi
+from skimage.morphology import remove_small_objects, skeletonize_3d
+from datetime import datetime
+from multiprocessing import Pool
+
 
 def load_stack(input_dir):
     # Load image stack filenames
@@ -261,23 +270,19 @@ def postprocess(specimen_dir, indir, ids, error_list, threshold=0.3, size_thresh
     return error_list
 
 
-if __name__=="__main__":
+def main(outdir, csv, num_processes):
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir', '-v', type=str, help='directory of validation/test data')
     parser.add_argument('--csv', type=str, help='input csv with specimen id column header')
     parser.add_argument('--num_processes', type=int, default = 1, help='number of processes to run parallel')
-    
+    """
     today_time = datetime.today()
     date_time = '_'.join([today_time.strftime("%b_%d_%Y"), str(today_time.hour), str(today_time.minute), 
                       str(today_time.second)])
-
-    args = parser.parse_args()
-    outdir = args.outdir
-    df = pd.read_csv(args.csv)
+    df = pd.read_csv(csv)
     specimens = list(df.specimen_id.values)
-
-    num_processes = args.num_processes
-    
+    num_processes = num_processes
     all_error_list = []
     if num_processes == 1:
 
@@ -309,7 +314,7 @@ if __name__=="__main__":
 
     else:
         p = Pool(processes=num_processes)
-        parallel_input = [(int(i), error_list) for i in specimens] 
+        parallel_input = [(int(i), []) for i in specimens]
         all_error_list = p.starmap(postprocess, parallel_input)
 
     with open('{}_postprocess_error_log.txt'.format(date_time), 'w') as f:

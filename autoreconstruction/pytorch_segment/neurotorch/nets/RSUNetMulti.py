@@ -1,4 +1,20 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+from collections import OrderedDict
+
+from autoreconstruction.pytorch_segment.neurotorch.nets import layers
+from autoreconstruction.pytorch_segment.neurotorch.nets.netcollector import NetCollector
+
+
 __doc__ = """
 
 Symmetric 3d U-Net for multiclass segmentation implemented in PyTorch
@@ -11,12 +27,6 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2017
 Based on an architecture by
 Kisuk Lee <kisuklee@mit.edu>, 2017
 """
-
-from torch import nn
-from torch.nn import functional as F
-import neurotorch.nets.layers as layers
-from neurotorch.nets.netcollector import NetCollector
-from collections import OrderedDict
 
 
 # Global switches

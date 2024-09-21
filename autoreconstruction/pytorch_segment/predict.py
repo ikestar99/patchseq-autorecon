@@ -1,15 +1,31 @@
-from neurotorch.nets.RSUNet import RSUNet
-from neurotorch.core.predictor import Predictor
-from neurotorch.datasets.filetypes import TiffVolume
-from neurotorch.datasets.dataset import Array
-from neurotorch.datasets.datatypes import (BoundingBox, Vector)
-import numpy as np
-import tifffile as tif
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import glob
-import argparse
+import numpy as np
+import tifffile as tif
+
+from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNet import RSUNet
+from autoreconstruction.pytorch_segment.neurotorch.core.predictor import Predictor
+from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (BoundingBox, Vector)
+
 
 def predict(checkpoint, test_dir, out_dir, bb, num_parts):
+    """
+    parser.add_argument('--ckpt', '-c', type=str, help='path to checkpoint')
+    parser.add_argument('--test_dir', '-v', type=str, help='directory of validation/test data')
+    parser.add_argument('--out_dir', '-o', type=str, help='results directory path')
+    parser.add_argument('--bb', '-b', nargs='+', type=int, help='bounding box')
+    parser.add_argument('--num_parts', '-n', type=int, help='number of parts to divide volume')
+    """
     # Initialize the U-Net architecture
     net = RSUNet()
 
@@ -39,14 +55,4 @@ def predict(checkpoint, test_dir, out_dir, bb, num_parts):
                 os.mkdir(out_dir)
             for i in range(probability_map.shape[0]):
                 tif.imsave(os.path.join(out_dir,'%03d.tif'%(i+offset)), np.uint8(255*probability_map[i,:,:]))  
-        offset = offset + bb[5+n]          
-
-if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt', '-c', type=str, help='path to checkpoint')
-    parser.add_argument('--test_dir', '-v', type=str, help='directory of validation/test data')
-    parser.add_argument('--out_dir', '-o', type=str, help='results directory path')
-    parser.add_argument('--bb', '-b', nargs='+', type=int, help='bounding box')
-    parser.add_argument('--num_parts', '-n', type=int, help='number of parts to divide volume')
-    args = parser.parse_args()
-    predict(args.ckpt, args.test_dir, args.out_dir, args.bb, args.num_parts)
+        offset = offset + bb[5+n]

@@ -1,4 +1,18 @@
-#!/usr/bin/env
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
+import math
+import torch
+import torch.nn as nn
+
+from torch.nn import init
+
+
 __doc__ = """
 
 Basic building block layers for constructing nets implemented in PyTorch.
@@ -7,12 +21,6 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2017
 Based on a similar module by
 Kisuk Lee <kisuklee@mit.edu>, 2016-2017
 """
-
-
-import torch
-import torch.nn as nn
-from torch.nn import init
-import math
 
 
 def pad_size(ks, mode):

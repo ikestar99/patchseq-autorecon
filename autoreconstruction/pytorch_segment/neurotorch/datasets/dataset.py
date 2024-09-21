@@ -1,18 +1,29 @@
-from torch.utils.data import Dataset as _Dataset
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import numpy as np
+
+from torch.utils.data import Dataset as _Dataset
+
 from abc import abstractmethod
-from neurotorch.datasets.datatypes import BoundingBox, Vector
-from numbers import Number
-from numpy import ndarray
 from scipy.spatial import KDTree
+from numbers import Number
 from functools import reduce
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+    BoundingBox, Vector)
 
 
 class Data:
     """
     An encapsulating object for communicating volumetric data
     """
-    def __init__(self, array: ndarray, bounding_box: BoundingBox):
+    def __init__(self, array: np.ndarray, bounding_box: BoundingBox):
         """
         Initializes a data packet from an Numpy array and its bounding box
 
@@ -43,7 +54,7 @@ location in 3D-space
 
         self.bounding_box = bounding_box
 
-    def getArray(self) -> ndarray:
+    def getArray(self) -> np.ndarray:
         """
         Retrieves the data packet's contents
 

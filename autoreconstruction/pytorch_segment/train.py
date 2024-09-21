@@ -1,13 +1,31 @@
-from neurotorch.datasets.specification import JsonSpec
-from neurotorch.core.trainer import Trainer
-from neurotorch.nets.RSUNet import RSUNet
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import numpy as np
 import torch
 import torch.optim as optim
-import argparse
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.specification import JsonSpec
+from autoreconstruction.pytorch_segment.neurotorch.core.trainer import Trainer
+from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNet import RSUNet
+
 
 def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks):
+    """
+    parser.add_argument('--ckpt', '-ck', type=str, help='path to checkpoint')
+    parser.add_argument('--ckpt_dir', '-c', type=str, help='directory to save checkpoint')
+    parser.add_argument('--log_dir', '-l', type=str, help='directory to save logs')
+    parser.add_argument('--json_dir', '-j', type=str, help='directory of json files')
+    parser.add_argument('--eps', '-e', type=float, default=1e-1)
+    parser.add_argument('--epochs', '-ep', type=int, default=10)
+    parser.add_argument('--num_stacks', '-n', type=int, default=3)
+    """
     inputs_list = [f for f in os.listdir(json_dir) if 'inputs' in f]
     inputs_list.sort()
     labels_list = [f for f in os.listdir(json_dir) if 'labels' in f]
@@ -113,15 +131,3 @@ def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks):
 
             # Set a new checkpoint
             ckpt = os.path.join(ckpt_dir, 'last{:03d}_{:03d}{}.ckpt'.format(k, i, cell_str)) # Use the last model as a new checkpoint
-
-if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt', '-ck', type=str, help='path to checkpoint')
-    parser.add_argument('--ckpt_dir', '-c', type=str, help='directory to save checkpoint')
-    parser.add_argument('--log_dir', '-l', type=str, help='directory to save logs')
-    parser.add_argument('--json_dir', '-j', type=str, help='directory of json files')
-    parser.add_argument('--eps', '-e', type=float, default=1e-1)
-    parser.add_argument('--epochs', '-ep', type=int, default=10)
-    parser.add_argument('--num_stacks', '-n', type=int, default=3)
-    args = parser.parse_args()
-    train(args.ckpt, args.ckpt_dir, args.log_dir, args.json_dir, args.eps, args.epochs, args.num_stacks)

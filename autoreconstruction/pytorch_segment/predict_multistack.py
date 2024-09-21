@@ -1,18 +1,29 @@
-from neurotorch.nets.RSUNet import RSUNet
-from neurotorch.core.predictor import Predictor
-from neurotorch.datasets.filetypes import TiffVolume
-from neurotorch.datasets.dataset import Array
-from neurotorch.datasets.datatypes import (BoundingBox, Vector)
-from multiprocessing import Pool
-import numpy as np
-import tifffile as tif
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os
 import glob
-import argparse
-import natsort
-import pandas as pd
-from datetime import date
+import numpy as np
 import torch
+import pandas as pd
+import natsort
+import tifffile as tif
+
+from datetime import date
+from multiprocessing import Pool
+
+from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNet import RSUNet
+from autoreconstruction.pytorch_segment.neurotorch.core.predictor import Predictor
+from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+    BoundingBox, Vector)
+
 
 def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files_per_chunk):
 
@@ -61,8 +72,7 @@ def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files
     except:
         print('error with segmentation')
         error_list.append(str(ids)+ ' -segmentation')  
-    
-     
+
     # Step 3. Remove Duplicate Files if necessary 
     try:
         
@@ -95,28 +105,24 @@ def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files
     return error_list
 
 
-if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt', '-c', type=str, help='path to checkpoint')
-    parser.add_argument('--outdir', '-v', type=str, help='directory of validation/test data')
-    parser.add_argument('--csv', type=str, help='input csv with specimen id column header')
-    parser.add_argument('--num_processes', type=int, default = 1, help='number of processes to run parallel')
-    parser.add_argument('--gpu', type=int, default = 0, help='gpu device')
-    parser.add_argument('--chunk', type=int, default = 32, help='files per chunk')
+def main(ckpt, outdir, csv, num_processes, gpu, chunk):
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--ckpt', '-c', type=str, help='path to checkpoint')
+    # parser.add_argument('--outdir', '-v', type=str, help='directory of validation/test data')
+    # parser.add_argument('--csv', type=str, help='input csv with specimen id column header')
+    # parser.add_argument('--num_processes', type=int, default = 1, help='number of processes to run parallel')
+    # parser.add_argument('--gpu', type=int, default = 0, help='gpu device')
+    # parser.add_argument('--chunk', type=int, default = 32, help='files per chunk')
 
-    today = date.today()
-    todays_date = today.strftime("%b_%d_%Y")
+    todays_date = date.today().strftime("%b_%d_%Y")
 
-    args = parser.parse_args()
-    outdir = args.outdir
-    df = pd.read_csv(args.csv)
+    # args = parser.parse_args()
+    df = pd.read_csv(csv)
     specimens = list(df.specimen_id.values)
-    files_per_chunk = args.chunk
-    num_processes = args.num_processes
+    files_per_chunk = chunk
     
     all_error_list = []
     if num_processes == 1:
-
         for sp_ids in specimens:       
             specimen_dir = os.path.join(outdir,str(sp_ids))
             error_list = []
@@ -136,8 +142,8 @@ if __name__=="__main__":
                 bb_r = df_r.bound_boxing.values
 
                 # Predict
-                res_l = predict(args.ckpt, specimen_dir, chunk_dir_left, bb_l, sp_ids, error_list, args.gpu, files_per_chunk)
-                res_r = predict(args.ckpt, specimen_dir, chunk_dir_right, bb_r, sp_ids, error_list_2, args.gpu, files_per_chunk)
+                res_l = predict(ckpt, specimen_dir, chunk_dir_left, bb_l, sp_ids, error_list, gpu, files_per_chunk)
+                res_r = predict(ckpt, specimen_dir, chunk_dir_right, bb_r, sp_ids, error_list_2, gpu, files_per_chunk)
 
                 all_error_list.append(res_l)
                 all_error_list.append(res_r)
@@ -152,15 +158,14 @@ if __name__=="__main__":
                 bb = df.bound_boxing.values
 
                 # predict
-                res = predict(args.ckpt, specimen_dir, chunk_dir, bb, sp_ids, error_list, args.gpu, files_per_chunk)
+                res = predict(ckpt, specimen_dir, chunk_dir, bb, sp_ids, error_list, gpu, files_per_chunk)
                 all_error_list.append(res)
-
 
     else:
         p = Pool(processes=num_processes)
-        parallel_input = [(args.ckpt, int(i), pd.read_csv(os.path.join(outdir,str(i),'bbox_{}.csv'.format(sp_ids))).bound_boxing.values, error_list) for i in specimens]
+        parallel_input = [(ckpt, int(i), pd.read_csv(os.path.join(outdir,str(i),'bbox_{}.csv'.format(i))).bound_boxing.values, []) for i in specimens]
         all_error_list = p.starmap(predict, parallel_input)
 
-    with open('{}_gpu{}_segmentation_error_log.txt'.format(todays_date, str(args.gpu)), 'w') as f:
+    with open('{}_gpu{}_segmentation_error_log.txt'.format(todays_date, str(gpu)), 'w') as f:
         for item in all_error_list:
             f.write("%s\n" % item)

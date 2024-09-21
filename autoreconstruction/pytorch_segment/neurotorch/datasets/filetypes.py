@@ -1,11 +1,23 @@
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Volume, Array, Data
-from neurotorch.datasets.datatypes import BoundingBox, Vector
-from abc import abstractmethod
-import fnmatch
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thur Sep 19 09:00:00 2024
+@origin: https://github.com/ogliko/patchseq-autorecon
+"""
+
+
 import os.path
 import h5py
 import numpy as np
+import fnmatch
 import tifffile as tif
+
+from abc import abstractmethod
+
+from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import (
+    Volume, Array, Data)
+from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+    BoundingBox, Vector)
 
 
 class TiffVolume(Volume):
