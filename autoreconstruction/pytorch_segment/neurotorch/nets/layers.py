@@ -10,8 +10,6 @@ import math
 import torch
 import torch.nn as nn
 
-from torch.nn import init
-
 
 __doc__ = """
 
@@ -45,9 +43,9 @@ class Conv(nn.Module):
 
         nn.Module.__init__(self)
         self.conv = nn.Conv3d(D_in, D_out, ks, st, pd, bias=bias)
-        init.kaiming_normal(self.conv.weight)
+        nn.init.kaiming_normal_(self.conv.weight)
         if bias:
-            init.constant(self.conv.bias, 0)
+            nn.init.constant_(self.conv.bias, 0)
 
     def forward(self, x):
         return self.conv(x)
@@ -86,9 +84,9 @@ class ConvT(nn.Module):
 
         nn.Module.__init__(self)
         self.conv = nn.ConvTranspose3d(D_in, D_out, ks, st, pd, bias=bias)
-        init.kaiming_normal(self.conv.weight)
+        nn.init.kaiming_normal_(self.conv.weight)
         if bias:
-            init.constant(self.conv.bias, 0)
+            nn.init.constant_(self.conv.bias, 0)
 
     def forward(self, x):
         return self.conv(x)

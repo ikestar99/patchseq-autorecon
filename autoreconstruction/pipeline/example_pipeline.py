@@ -64,8 +64,9 @@ def __main__(
 
 if __name__ == "__main__":
     specimen_id = 2112
+    root = "/Users/ikogbonna/Documents/Code/patchseq-autorecon/"
     # Directory for specimen output files. If None, use basedir of raw_single_tif_dir
-    specimen_dir = f"/autoreconstruction/pipeline/Example_Specimen_{specimen_id}/"
+    specimen_dir = f"{root}autoreconstruction/pipeline/Example_Specimen_{specimen_id}/"
 
     raw_single_tif_dir_tarball = f"{specimen_dir}Example_Input_Stack.tar.gz"
 
@@ -89,9 +90,9 @@ if __name__ == "__main__":
         gpu=gpu,
         intensity_threshold=intensity_threshold,
         invert_image_color=invert_image_color,
-        extract=True,
-        preprocess=True,
-        segment=True,
-        skeleton=True,
-        swc=True
+        extract=False,  # ran successfully
+        preprocess=False,  # ran successfully
+        segment=False,  # ran successfully
+        skeleton=False,  # ran successfully
+        swc=True  # ran successfully on specimen 2112
     )

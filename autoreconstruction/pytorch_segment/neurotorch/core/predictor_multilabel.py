@@ -24,9 +24,10 @@ class Predictor:
         self.loadCheckpoint(checkpoint)
 
     def setNet(self, net, gpu_device=None):
-        self.device = torch.device("cuda:{}".format(gpu_device)
-                                   if gpu_device is not None
-                                   else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cuda:{}".format(gpu_device)
+        #                            if gpu_device is not None
+        #                            else "cpu")
 
         self.net = net.to(self.device).eval()
 
@@ -34,7 +35,16 @@ class Predictor:
         return self.net
 
     def loadCheckpoint(self, checkpoint):
-        self.getNet().load_state_dict(torch.load(checkpoint, map_location=self.device))
+        self.getNet()
+        # print(self.net)
+        state_dict = torch.load(checkpoint, map_location=self.device)
+        # for key, value in state_dict.items():
+        #     print(key, value.shape)
+        if "aspiny_model.ckpt" in checkpoint:
+            state_dict["outputdeconv.label.conv.weight"] = state_dict.pop("outputdeconv.soma_label.conv.weight")
+            state_dict["outputdeconv.label.conv.bias"] = state_dict.pop("outputdeconv.soma_label.conv.bias")
+
+        self.net.load_state_dict(state_dict)
 
     def run(self, input_volume, output_volume, batch_size=100):
         self.setBatchSize(batch_size)
@@ -70,7 +80,7 @@ class Predictor:
                 output_volume[ch].blend(data)
 
     def toArray(self, data):
-        torch_data = data.getArray().astype(np.float)
+        torch_data = data.getArray().astype(float)
         torch_data = torch_data.reshape(1, 1, *torch_data.shape)
         return torch_data
 

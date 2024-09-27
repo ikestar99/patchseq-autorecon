@@ -13,7 +13,7 @@ import natsort
 import tifffile as tif
 
 from scipy import ndimage as ndi
-from skimage.morphology import remove_small_objects, skeletonize_3d
+from skimage.morphology import remove_small_objects, skeletonize
 from datetime import date
 
 
@@ -240,7 +240,7 @@ def postprocess(specimen_dir, indir, ids, error_list, intensity_threshold, thres
 
             # skeletonize stack
             print('skeletonizing stack')
-            stack = skeletonize_3d(stack)
+            stack = skeletonize(stack)
 
             # save stack as multiple tif files
             print('saving stack')

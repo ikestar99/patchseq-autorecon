@@ -322,8 +322,7 @@ origin
             self.index = 0
             raise StopIteration
 
-        element_vec = np.unravel_index(idx,
-                                       dims=self.element_vec.getComponents())
+        element_vec = np.unravel_index(idx, shape=self.element_vec.getComponents())
 
         element_vec = Vector(*element_vec)
         bounding_box = self.iteration_size+self.stride*element_vec

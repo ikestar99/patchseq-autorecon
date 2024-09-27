@@ -793,11 +793,14 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
         elif v == -1:
             parent = -1
             node_type = 1
-            radius = mean_radius
+            radius = 1  # mean_radius
         else:
-            parent = big_node_dict[v]
-            node_type = skeleton_coord_labels_dict[k]
-            radius = 1
+            try:
+                parent = big_node_dict[v]
+                node_type = skeleton_coord_labels_dict[k]
+                radius = 1
+            except KeyError:
+                continue
 
         swc_line = [big_node_dict[k]] + [node_type] + list(k) + [radius] + [parent]
 
@@ -829,5 +832,3 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
             if os.path.exists(full_dir_name):
                 print(full_dir_name)
                 shutil.rmtree(full_dir_name)
-    #
-    #
