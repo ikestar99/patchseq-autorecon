@@ -784,6 +784,7 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
 
     # Make swc list for swc file writing
     swc_list = []
+    _error_count = 0
     for k,v in parent_dict.items():
         # id,type,x,y,z,r,pid
         if v == 0:
@@ -800,11 +801,14 @@ def skeleton_to_swc_parallel(sp_id,specimen_dir,remove_intermediate_files,max_st
                 node_type = skeleton_coord_labels_dict[k]
                 radius = 1
             except KeyError:
+                _error_count += 1
                 continue
 
         swc_line = [big_node_dict[k]] + [node_type] + list(k) + [radius] + [parent]
 
         swc_list.append(swc_line)
+
+    print(f"{_error_count} errors from {len(parent_dict)} total items")
         
     # Write Swc file
     swc_path = os.path.join(specimen_dir,'{}_raw_autotrace.swc'.format(sp_id))

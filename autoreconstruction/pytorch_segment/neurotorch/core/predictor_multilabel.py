@@ -36,14 +36,7 @@ class Predictor:
 
     def loadCheckpoint(self, checkpoint):
         self.getNet()
-        # print(self.net)
         state_dict = torch.load(checkpoint, map_location=self.device)
-        # for key, value in state_dict.items():
-        #     print(key, value.shape)
-        if "aspiny_model.ckpt" in checkpoint:
-            state_dict["outputdeconv.label.conv.weight"] = state_dict.pop("outputdeconv.soma_label.conv.weight")
-            state_dict["outputdeconv.label.conv.bias"] = state_dict.pop("outputdeconv.soma_label.conv.bias")
-
         self.net.load_state_dict(state_dict)
 
     def run(self, input_volume, output_volume, batch_size=100):
