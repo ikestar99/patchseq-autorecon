@@ -62,6 +62,18 @@ def __main__(
     print("Example Pipeline Completed Successfully")
 
 
+def __main2__():
+    """
+    Modified version of the Ogliko pipeline based on additional insight from SfN 2024 (Chicago). Essentially, the
+    original pipeline presents a U-Net derived convnet trained to segment inhibitory cortical neuron projections from
+    mouse motor cortex and a supplementary model transfer learned and refined to segment excitatory neurons.
+
+    Step 1. use ogliko model(s) to segment large volume neuroimaging data piecewise
+    Step 2. use builtin methods to convert segmentation into mesh and/or skeleton
+    Step 2. use Neurd (SfN, Allen institute)
+    """
+
+
 if __name__ == "__main__":
     # specimen_id = 2112
     specimen_id = 2000
