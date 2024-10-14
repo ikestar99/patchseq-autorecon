@@ -7,25 +7,29 @@ Created on Thur Sep 19 09:00:00 2024
 
 
 import tarfile
-import os.path as op
 
-from autoreconstruction.pipeline import PreProcess_ImageStack
+from pathlib import Path
+
+from autoreconstruction.pipeline.PreProcess_ImageStack import process_specimen
 from autoreconstruction.pipeline import ImageStack_To_Segmentation
 from autoreconstruction.pipeline import Segmentation_To_Skeleton
 from autoreconstruction.pipeline import Skeleton_To_Swc
 
 
 def __main__(
-        specimen_id: int,
-        specimen_dir: str,
-        raw_single_tif_dir_tarball: str,
-        raw_single_tif_dir: str,
+        specimen_id: str,
+        specimen_dir: Path,
+        raw_single_tif_dir_tarball: Path,
+        raw_single_tif_dir: Path,
         ckpt: str,
         gpu: int,
         intensity_threshold: int,
         invert_image_color: bool,
         extract: bool,
         preprocess: bool,
+        chunk_z: int,
+        chunk_ds: int,
+        chunk_xy: int,
         segment: bool,
         skeleton: bool,
         swc: bool):
@@ -37,8 +41,15 @@ def __main__(
 
     if preprocess:
         # running image stack processing
-        PreProcess_ImageStack.main(
-            specimen_id, raw_single_tif_dir, specimen_dir, invert_image_color)
+        errors = process_specimen(
+            ids=specimen_id,
+            specimen_dir=specimen_dir,
+            raw_single_tif_dir=raw_single_tif_dir,
+            invert_image_color=invert_image_color,
+            dz=chunk_z,
+            ds=chunk_ds,
+            dc=chunk_xy)
+        print(f"Image Preprocessing errors: {errors}")
 
     if segment:
         # running image stack segmentation
@@ -59,36 +70,34 @@ def __main__(
             minimum_soma_area_pixels=500,
             soma_connection_threshold=100)
 
-    print("Example Pipeline Completed Successfully")
-
-
-def __main2__():
-    """
-    Modified version of the Ogliko pipeline based on additional insight from SfN 2024 (Chicago). Essentially, the
-    original pipeline presents a U-Net derived convnet trained to segment inhibitory cortical neuron projections from
-    mouse motor cortex and a supplementary model transfer learned and refined to segment excitatory neurons.
-
-    Step 1. use ogliko model(s) to segment large volume neuroimaging data piecewise
-    Step 2. use builtin methods to convert segmentation into mesh and/or skeleton
-    Step 2. use Neurd (SfN, Allen institute)
-    """
-
 
 if __name__ == "__main__":
-    # specimen_id = 2112
-    specimen_id = 2000
-    root = "/Users/ikogbonna/Documents/Code/patchseq-autorecon/"
-    # Directory for specimen output files. If None, use basedir of raw_single_tif_dir
-    specimen_dir = f"{root}autoreconstruction/pipeline/Example_Specimen_{specimen_id}/"
+    """
+    Inputs to pipeline
+    """
+    # specimen_id = "2112"
+    specimen_id = "2000"
 
-    raw_single_tif_dir_tarball = f"{specimen_dir}Example_Input_Stack.tar.gz"
+    # absolute path to local repository
+    root = Path("/Users/ike/Documents/Code/patchseq-autorecon")
 
-    # A directory with individual tif files (z-slices)
-    raw_single_tif_dir = f"{specimen_dir}Example_Input_Stack/"
+    # directory for specimen related files, relative to root
+    specimen_dir = root.joinpath(
+        Path(f"autoreconstruction/pipeline/Example_Specimen_{specimen_id}"))
 
-    # Neural network will expect inverted (black background) images
-    invert_image_color = "True"
+    # path to tarball specimen file, relative to specimen_dir
+    raw_single_tif_dir_tarball = specimen_dir.joinpath(
+        "Example_Input_Stack.tar.gz")
+
+    # directory with individual tif files, relative to specimen_dir
+    raw_single_tif_dir = specimen_dir.joinpath("Example_Input_Stack")
+
+    # UNet expects input with black background, y and x divisible by chunk_ds
+    invert_image_color = True
     ckpt = "aspiny_model.ckpt"
+    chunk_z = 32  # from training
+    chunk_ds = 64  # from training, y and x
+    chunk_scalar = 8  # chunk x, y = chunk_ds * chunk_scalar
 
     # 50 for spiny 252 for aspiny
     intensity_threshold = 252
@@ -104,8 +113,11 @@ if __name__ == "__main__":
         intensity_threshold=intensity_threshold,
         invert_image_color=invert_image_color,
         extract=False,  # ran successfully
-        preprocess=True,  # ran successfully
-        segment=True,  # ran successfully
-        skeleton=True,  # ran successfully
-        swc=False  # ran successfully on specimen 2112
+        preprocess=False,  # ran successfully
+        chunk_z=chunk_z,
+        chunk_ds=chunk_ds,
+        chunk_xy=chunk_ds * chunk_scalar,
+        segment=False,  # ran successfully
+        skeleton=False,  # ran successfully
+        swc=True  # ran successfully on specimen 2112
     )

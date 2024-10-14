@@ -7,7 +7,6 @@ Created on Thur Sep 19 09:00:00 2024
 
 
 import os
-import glob
 import numpy as np
 import tifffile as tif
 
@@ -44,7 +43,7 @@ def predict(checkpoint, test_dir, out_dir, bb, num_parts):
             # Predict
             predictor = Predictor(net, checkpoint, gpu_device=0)
             # Output_volume is a list (len3) of Arrays for each of 3 foreground channels (soma, axon, dendrite)
-            output_volume = [Array(np.zeros(inputs.getBoundingBox().getNumpyDim(), dtype=np.uint8)) for _ in range(3)]
+            output_volume = [Array(np.zeros(inputs.getBoundingBox().numpy_dims, dtype=np.uint8)) for _ in range(3)]
             print('bb0', inputs.getBoundingBox())
             predictor.run(inputs, output_volume)
                             

@@ -76,7 +76,7 @@ location in 3D-space
 
         :return: A vector containing the data packet's size
         """
-        return self.getBoundingBox().getSize()
+        return self.getBoundingBox().size
 
     def __add__(self, other):
         if not isinstance(other, Data):
@@ -149,7 +149,7 @@ not exist, then the method raises a ValueError.
         :param bounding_box: The bounding box of the request data sample
         :return: The data sample requested
         """
-        if bounding_box.isDisjoint(self.getBoundingBox()):
+        if bounding_box.is_disjoint(self.getBoundingBox()):
             error_string = ("Bounding box must be inside dataset " +
                             "dimensions instead bounding box is {} while " +
                             "the dataset dimensions are {}")
@@ -160,12 +160,12 @@ not exist, then the method raises a ValueError.
         sub_bounding_box = bounding_box.intersect(self.getBoundingBox())
         array = self.getArray(sub_bounding_box)
 
-        before_pad = bounding_box.getEdges()[0] - sub_bounding_box.getEdges()[0]
-        after_pad = bounding_box.getEdges()[1] - sub_bounding_box.getEdges()[1]
+        before_pad = bounding_box.get_edges()[0] - sub_bounding_box.get_edges()[0]
+        after_pad = bounding_box.get_edges()[1] - sub_bounding_box.get_edges()[1]
 
         if before_pad != Vector(0, 0, 0) or after_pad != Vector(0, 0, 0):
-            pad_size = tuple(zip(before_pad.getNumpyDim(),
-                                 after_pad.getNumpyDim()))
+            pad_size = tuple(zip(before_pad.numpy_dims,
+                                 after_pad.numpy_dims))
             array = np.pad(array, pad_width=pad_size, mode="constant")
 
         return Data(array, bounding_box)
@@ -184,14 +184,14 @@ given data.
             raise ValueError("The bounding box must be a subset of the "
                              " volume")
 
-        data_edge1, data_edge2 = data_bounding_box.getEdges()
-        array_edge1, array_edge2 = self.getBoundingBox().getEdges()
+        data_edge1, data_edge2 = data_bounding_box.get_edges()
+        array_edge1, array_edge2 = self.getBoundingBox().get_edges()
 
         edge1 = data_edge1 - array_edge1
         edge2 = data_edge2 - array_edge1
 
-        x1, y1, z1 = edge1.getComponents()
-        x2, y2, z2 = edge2.getComponents()
+        x1, y1, z1 = edge1.components
+        x2, y2, z2 = edge2.components
 
         self.array[z1:z2, y1:y2, x1:x2] = data_array
 
@@ -225,10 +225,10 @@ If the bounding box is outside of the volume, a ValueError is raised.
                 raise ValueError("The bounding box must be a subset" +
                                  " of the volume")
 
-            centered_bounding_box = bounding_box - self.getBoundingBox().getEdges()[0]
-            edge1, edge2 = centered_bounding_box.getEdges()
-            x1, y1, z1 = edge1.getComponents()
-            x2, y2, z2 = edge2.getComponents()
+            centered_bounding_box = bounding_box - self.getBoundingBox().get_edges()[0]
+            edge1, edge2 = centered_bounding_box.get_edges()
+            x1, y1, z1 = edge1.components
+            x2, y2, z2 = edge2.components
 
             return self.array[z1:z2, y1:y2, x1:x2]
 
@@ -279,7 +279,7 @@ origin
             raise ValueError("stride must have type Vector")
 
         if not iteration_size.isSubset(BoundingBox(Vector(0, 0, 0),
-                                                   self.getBoundingBox().getSize())):
+                                                   self.getBoundingBox().size)):
             raise ValueError("iteration_size must be smaller than volume size")
 
         self.setIterationSize(iteration_size)
@@ -289,15 +289,15 @@ origin
             return int(round(x))
 
         self.element_vec = Vector(*map(lambda L, l, s: ceil((L-l)/s+1),
-                                       self.getBoundingBox().getSize().getComponents(),
-                                       self.iteration_size.getSize().getComponents(),
-                                       self.stride.getComponents()))
+                                       self.getBoundingBox().size.components,
+                                       self.iteration_size.size.components,
+                                       self.stride.components))
 
         self.index = 0
 
     def setIterationSize(self, iteration_size):
         self.iteration_size = BoundingBox(Vector(0, 0, 0),
-                                          iteration_size.getSize())
+                                          iteration_size.size)
 
     def setStride(self, stride):
         self.stride = stride
@@ -322,7 +322,7 @@ origin
             self.index = 0
             raise StopIteration
 
-        element_vec = np.unravel_index(idx, shape=self.element_vec.getComponents())
+        element_vec = np.unravel_index(idx, shape=self.element_vec.components)
 
         element_vec = Vector(*element_vec)
         bounding_box = self.iteration_size+self.stride*element_vec
@@ -401,10 +401,10 @@ class Volume:
             raise ValueError("stride must have type Vector")
 
         if not iteration_size.isSubset(BoundingBox(Vector(0, 0, 0),
-                                                   self.getBoundingBox().getSize())):
+                                                   self.getBoundingBox().size)):
             raise ValueError("iteration_size must be smaller than volume size " +
-                             "instead the iteration size is {} ".format(iteration_size.getSize()) +
-                             "and the volume size is {}".format(self.getBoundingBox().getSize()))
+                             "instead the iteration size is {} ".format(iteration_size.size) +
+                             "and the volume size is {}".format(self.getBoundingBox().size))
 
         self.setIterationSize(iteration_size)
         self.setStride(stride)
@@ -413,9 +413,9 @@ class Volume:
             return int(round(x))
 
         self.element_vec = Vector(*map(lambda L, l, s: ceil((L-l)/s+1),
-                                       self.getBoundingBox().getSize().getComponents(),
-                                       self.iteration_size.getSize().getComponents(),
-                                       self.stride.getComponents()))
+                                       self.getBoundingBox().size.components,
+                                       self.iteration_size.size.components,
+                                       self.stride.components))
 
         self.index = 0
 
@@ -624,7 +624,7 @@ class PooledVolume(Volume):
         return pos
 
     def _rebuildIndexes(self):
-        edge1_list = [volume.getBoundingBox().getEdges()[0].getComponents()
+        edge1_list = [volume.getBoundingBox().get_edges()[0].components
                       for volume in self.volumes]
 
         self.edge1_list = KDTree(edge1_list)
@@ -637,11 +637,11 @@ class PooledVolume(Volume):
         if self.volumes_changed:
             self._rebuildIndexes()
 
-        edge1 = [bounding_box.getEdges()[0].getComponents()]
+        edge1 = [bounding_box.get_edges()[0].components]
         distances, indexes  = self.edge1_list.query(edge1, k=8)
         indexes = [index for index, dist in zip(indexes[0], distances[0])
                    if dist < float('Inf')]
-        indexes = filter(lambda index: not bounding_box.isDisjoint(self.volumes[index].getBoundingBox()),
+        indexes = filter(lambda index: not bounding_box.is_disjoint(self.volumes[index].getBoundingBox()),
                          indexes)
         if not indexes:
             raise IndexError("bounding_box is not present in any indexes")
@@ -671,12 +671,12 @@ class PooledVolume(Volume):
             sub_bbox = bounding_box.intersect(volume.getBoundingBox())
             data.append(volume.get(sub_bbox))
 
-        shape = bounding_box.getNumpyDim()
+        shape = bounding_box.numpy_dims
         array = Array(np.zeros(shape).astype(np.uint16),
                         bounding_box=bounding_box,
                         iteration_size=BoundingBox(Vector(0, 0, 0),
-                                                    bounding_box.getSize()),
-                        stride=bounding_box.getSize())
+                                                    bounding_box.size),
+                        stride=bounding_box.size)
         [array.set(item) for item in data]
         return Data(array.getArray(), bounding_box)
 
@@ -727,11 +727,11 @@ class PooledVolume(Volume):
         _idx = idx-self.volume_index[index]
 
         element_vec = np.unravel_index(_idx,
-                                       dims=volume.element_vec.getComponents())
+                                       dims=volume.element_vec.components)
 
         element_vec = Vector(*element_vec)
         bounding_box = volume.iteration_size+volume.stride*element_vec \
-                       + volume.getBoundingBox().getEdges()[0]
+                       + volume.getBoundingBox().get_edges()[0]
 
         return bounding_box
 

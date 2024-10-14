@@ -44,7 +44,7 @@ def predict(checkpoint, test_dir, out_dir, bb, num_parts):
         with TiffVolume(os.path.join(test_dir, filename), bbn) as inputs:              
             # Predict
             predictor = Predictor(net, checkpoint, gpu_device=0)
-            output_volume = Array(-np.inf*np.ones(inputs.getBoundingBox().getNumpyDim(), dtype=np.float32))
+            output_volume = Array(-np.inf*np.ones(inputs.getBoundingBox().numpy_dims, dtype=np.float32))
             print('bb0', inputs.getBoundingBox())
             predictor.run(inputs, output_volume)
                             

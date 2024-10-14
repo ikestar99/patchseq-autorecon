@@ -13,193 +13,142 @@ class Vector:
     """
     A basic vector data type
     """
-    def __init__(self, *components: Number):
+    def __init__(
+            self,
+            *args: Number
+    ):
         """
         Initializes a vector
-        :param components: Numbers specifying the components of the vector
-        :type components: List of numbers
+        :param args: Numbers specifying the components of the vector
+        :type args: List of numbers
         """
-        self.setComponents(components)
+        assert all(isinstance(x, Number) for x in args)
+        self.components = tuple(args)
+        self.dimensions = len(self.components)
+        self.numpy_dims = self.components[::-1]
 
-    def setComponents(self, components: list):
-        """
-        Set the components in a vector
-        :param components: A list of numbers specifying the vector's 
-components
-        :type components: List of numbers
-        """
-        if not all(isinstance(x, Number) for x in components):
-            raise ValueError("components must contain all numbers instead" +
-                             " it contains {}".format(components))
-        self.components = tuple(components)
+    def __getitem__(
+            self,
+            idx: int
+    ):
+        return self.components[idx]
 
-    def getComponents(self) -> list:
-        """
-        Retrieves the components of a vector
-        :return: A list of numbers specifying the vector's components
-        :rtype: List of numbers
-        """
-        return self.components
-
-    def getDimension(self) -> int:
-        """
-        Returns the dimension of the vector
-        :return: The vector's dimension
-        :rtype: int
-        """
-        return len(self.getComponents())
-
-    def getNumpyDim(self) -> list:
-        """
-        Returns the size of the bounding box in row-major order (Z, Y, X)
-        :return: Size of the bounding box in row-major order (Z, Y, X)
-        :rtype: list
-        """
-        return self.getComponents()[::-1]
-
-    def __getitem__(self, idx):
-        if not isinstance(idx, int):
-            raise IndexError("the index must be an positive integer")
-        if idx < 0 or idx >= self.getDimension():
-            raise IndexError("the index is out-of-bounds")
-
-        return self.getComponents()[idx]
-
-    def __add__(self, other):
-        if not isinstance(other, Vector):
-            raise ValueError("other must be a vector instead"
-                             " it is {}".format(type(other)))
-
-        if self.getDimension() != other.getDimension():
-            raise ValueError("other must have the same dimension instead "
-                             + "self is {} and other is {}".format(self,
-                                                                   other))
-
-        result = tuple(s + o for s, o in zip(self.getComponents(),
-                                             other.getComponents()))
-
-        return Vector(*result)
-
-    def __mul__(self, other):
+    def __add__(
+            self,
+            other
+    ):
         if isinstance(other, Number):
-            result = [s * other for s in self.getComponents()]
-
+            result = [s + other for s in self.components]
         elif isinstance(other, Vector):
-            result = [s*o for s, o in zip(self.getComponents(),
-                                          other.getComponents())]
-
+            assert self.dimensions == other.dimensions, (
+                f"dimension error: {self.dimensionsn} and {other.dimensions}")
+            result = [s + o for s, o in zip(self.components, other.components)]
         else:
-            raise ValueError("other must be a number or a vector instead"
-                             " it is {}".format(type(other)))
+            raise ValueError(
+                f"other must be a number or a vector, not {type(other)}")
 
         return Vector(*result)
 
-    def __div__(self, other):
+    def __mul__(
+            self,
+            other
+    ):
         if isinstance(other, Number):
-            return self*(1/other)
+            result = [s * other for s in self.components]
+        elif isinstance(other, Vector):
+            result = [
+                s * o for s, o in zip(self.components, other.components)]
+        else:
+            raise ValueError(
+                f"other must be a number or a vector, not {type(other)}")
 
-        if isinstance(other, Vector):
-            result = Vector([1/o for o in other.getComponents()])
-            result *= self
+        return Vector(*result)
 
-            return result
+    def __div__(
+            self,
+            other
+    ):
+        if isinstance(other, Number):
+            return self * (1 / other)
+        elif isinstance(other, Vector):
+            return self * Vector(*[1 / o for o in other.components])
+        else:
+            raise ValueError(
+                f"other must be a number or a vector, not {type(other)}")
 
-    def __sub__(self, other):
-        return self+(other*-1)
+    def __sub__(
+            self,
+            other
+    ):
+        return self + (other * -1)
 
-    def __neg__(self):
-        return self*-1
+    def __neg__(
+            self
+    ):
+        return self * -1
 
-    def __eq__(self, other):
-        if not isinstance(other, Vector):
-            raise ValueError("other must be a vector instead"
-                             " it is {}".format(type(other)))
+    def __eq__(
+            self,
+            other
+    ):
+        assert isinstance(other, Vector), (
+            f"other must be a vector, not {type(other)}")
 
-        if self.getDimension() != other.getDimension():
-            raise ValueError("other must have the same dimension")
+        return self.components == other.components
 
-        return all(r1 == r2 for r1, r2 in zip(self.getComponents(),
-                                              other.getComponents()))
+    def __ne__(
+            self,
+            other
+    ):
+        return not self == other
 
-    def __ne__(self, other):
-        return not (self == other)
+    def __str__(
+            self
+    ):
+        return f"{self.components}"
 
-    def __str__(self):
-        return "{}".format(self.getComponents())
-
-    def __iter__(self):
-        return iter(self.getComponents())
+    def __iter__(
+            self
+    ):
+        return iter(self.components)
 
 
 class BoundingBox:
     """
     A basic data type specifying a cube
     """
-    def __init__(self, edge1: Vector, edge2: Vector):
+    def __init__(
+            self,
+            edge1: Vector,
+            edge2: Vector
+    ):
         """
         Initializes a bounding box
         :param edge1: A vector specifying the first edge of the box
-        :type edge1: Vector
         :param edge2: A vector specifying the second edge of the box
-        :type edge2: Vector
         """
-        self.setEdges(edge1, edge2)
-
-    def setEdges(self, edge1: Vector, edge2: Vector):
-        """
-        Sets the edges of the bounding box
-        :param edge1: A vector specifying the first edge of the box
-        :type edge1: Vector
-        :param edge2: A vector specifying the second edge of the box
-        :type edge2: Vector
-        """
-        if not isinstance(edge1, Vector) or not isinstance(edge2, Vector):
-            raise ValueError("edges must be vectors")
-
-        if edge1.getDimension() != edge2.getDimension():
-            raise ValueError("edges must have the same dimension instead"
-                             + " edge 1 is {} and edge 2 is {}".format(edge1,
-                                                                       edge2))
+        assert all((isinstance(edge1, Vector), isinstance(edge2, Vector))), (
+            "edges must be vectors")
+        assert edge1.dimensions == edge2.dimensions, (
+            f"edges mismatched, edge 1: {edge1} and edge 2: {edge2}")
 
         self.edge1 = edge1
         self.edge2 = edge2
+        self.size = edge2 - edge1
+        self.numpy_dims = self.size.components[::-1]
 
-    def getEdges(self) -> tuple:
+    def get_edges(
+            self
+    ):
         """
         Returns the two edges for the bounding box
-        :return: A tuple of two vectors containing the edges of the box
-        :rtype: tuple
         """
-        return (self.edge1, self.edge2)
+        return self.edge1, self.edge2
 
-    def getDimension(self) -> int:
-        """
-        Returns the dimension of the bounding box
-        :return: The dimension of the bounding box
-        :rtype: int
-        """
-        return self.getEdges()[0].getDimension()
-
-    def getSize(self) -> Vector:
-        """
-        Returns the size of the bounding box as a vector
-        :return: The size of the bounding box
-        :rtype: Vector
-        """
-        edge1, edge2 = self.getEdges()
-        chunk_size = edge2 - edge1
-
-        return chunk_size
-
-    def getNumpyDim(self) -> list:
-        """
-        Returns the size of the bounding box in row-major order (Z, Y, X)
-        :return: Size of the bounding box in row-major order (Z, Y, X)
-        :rtype: list
-        """
-        return self.getSize().getComponents()[::-1]
-
-    def isDisjoint(self, other) -> bool:
+    def is_disjoint(
+            self,
+            other
+    ):
         """
         Determines whether two bounding boxes are disjoint from each other
         :param other: The other bounding box for comparison
@@ -211,48 +160,39 @@ class BoundingBox:
             raise ValueError("other must be a vector instead other is "
                              "{}".format(type(other)))
 
-        result = any(r1 > r2 for r1, r2 in zip(self.getEdges()[0],
-                                               other.getEdges()[1]))
-        result |= any(r1 < r2 for r1, r2 in zip(self.getEdges()[1],
-                                                other.getEdges()[0]))
+        # result = any(r1 > r2 for r1, r2 in zip(self.get_edges()[0],
+        #                                        other.get_edges()[1]))
+        # result |= any(r1 < r2 for r1, r2 in zip(self.get_edges()[1],
+        #                                         other.get_edges()[0]))
+        return any(
+            [se1 > oe2 for se1, oe2 in zip(self.edge1, other.edge2)] +
+            [oe1 > se2 for se2, oe1 in zip(self.edge2, other.edge1)])
 
-        return result
-
-    def isSubset(self, other):
+    def isSubset(
+            self,
+            other
+    ):
         """
         Determines whether the bounding box is a subset of the other
         :param other: The other bounding box for comparison
         :type other: BoundingBox
         :return: True if the bounding box is a subset of the other, false
- otherwise
+            otherwise
         :rtype: bool
         """
-        if not isinstance(other, BoundingBox):
-            raise ValueError("other must be a vector instead other is "
-                             "{}".format(type(other)))
+        assert isinstance(other, BoundingBox), (
+            f"other must be a vector instead other is {type(other)}")
+
+        # result = any(r1 <= r2 for r1, r2 in zip(self.get_edges()[1],
+        #                                         other.get_edges()[1]))
+        # result &= any(r1 >= r2 for r1, r2 in zip(self.get_edges()[0],
+        #                                          other.get_edges()[0]))
 
         # Determines whether the first bounding box's components are
-        # less than or equal to the other's components
-        result = any(r1 <= r2 for r1, r2 in zip(self.getEdges()[1],
-                                                other.getEdges()[1]))
-
-        # Determines whether the first bounding box's components are
-        # greater than or equal to the other's components
-        result &= any(r1 >= r2 for r1, r2 in zip(self.getEdges()[0],
-                                                 other.getEdges()[0]))
-
-        return result
-
-    def isSuperset(self, other):
-        """
-        Determines whether the bounding box is a super set of the other
-        :param other: The other bounding box for comparison
-        :type other: BoundingBox
-        :return: True if the bounding box is a super set of the other, false
- otherwise
-        :rtype: bool
-        """
-        return other.isSubset(self)
+        # within the other's components
+        return all(
+            [se2 <= oe2 for se2, oe2 in zip(self.edge2, other.edeg2)] +
+            [se1 >= oe1 for se1, oe1 in zip(self.edge1, other.edge1)])
 
     def intersect(self, other):
         """
@@ -263,25 +203,25 @@ bounding boxes
         :return: An bounding box intersecting the two bounding boxes
         :rtype: BoundingBox
         """
-        if self.isDisjoint(other):
+        if self.is_disjoint(other):
             raise ValueError("The bounding boxes must not be disjoint")
 
         # The first edge contains the largest components of the first
         # edge of the two bounding boxes
         edge1 = Vector(*map(lambda x, y: max(x, y),
-                            self.getEdges()[0].getComponents(),
-                            other.getEdges()[0].getComponents()))
+                            self.get_edges()[0].components,
+                            other.get_edges()[0].components))
 
         # The second edge contains the smallest components of the second
         # edge of the two bounding boxes
         edge2 = Vector(*map(lambda x, y: min(x, y),
-                            self.getEdges()[1].getComponents(),
-                            other.getEdges()[1].getComponents()))
+                            self.get_edges()[1].components,
+                            other.get_edges()[1].components))
 
         return BoundingBox(edge1, edge2)
 
     def __str__(self):
-        edge1, edge2 = self.getEdges()
+        edge1, edge2 = self.get_edges()
         return "Edge1: {}\nEdge2: {}".format(edge1, edge2)
 
     def __add__(self, other):
@@ -289,7 +229,7 @@ bounding boxes
             raise ValueError("other must be a vector instead other is "
                              + "{}".format(type(other)))
 
-        edge1, edge2 = self.getEdges()
+        edge1, edge2 = self.get_edges()
         result = BoundingBox(edge1 + other, edge2 + other)
         return result
 
@@ -300,8 +240,8 @@ bounding boxes
         if not isinstance(other, BoundingBox):
             raise ValueError("other must be a BoundingBox")
 
-        s_edge1, s_edge2 = self.getEdges()
-        o_edge1, o_edge2 = other.getEdges()
+        s_edge1, s_edge2 = self.get_edges()
+        o_edge1, o_edge2 = other.get_edges()
 
         return (s_edge1 == o_edge1) and (s_edge2 == o_edge2)
 
