@@ -67,12 +67,12 @@ class Predictor:
             output_volume.blend(data)
 
     def toArray(self, data):
-        torch_data = data.getArray().astype(np.float)
+        torch_data = data.array.astype(np.float)
         torch_data = torch_data.reshape(1, 1, *torch_data.shape)
         return torch_data
 
     def toTorch(self, batch):
-        bounding_boxes = [data.getBoundingBox() for data in batch]
+        bounding_boxes = [data.bounding_box for data in batch]
         arrays = [self.toArray(data) for data in batch]
         arrays = torch.from_numpy(np.concatenate(arrays, axis=0))
         arrays = arrays.to(self.device)

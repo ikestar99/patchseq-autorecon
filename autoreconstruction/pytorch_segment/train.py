@@ -76,9 +76,9 @@ def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks):
                 labels = json_spec.create(spec,stack_size=33)
                 
                 for n in range(len(inputs)):
-                    if not (labels[n].getArray() == 0).all():
-                        volume1.append(inputs[n].getArray().astype(np.uint8))
-                        volume2.append(labels[n].getArray().astype(np.uint8))
+                    if not (labels[n].array == 0).all():
+                        volume1.append(inputs[n].array.astype(np.uint8))
+                        volume2.append(labels[n].array.astype(np.uint8))
                 
                 del inputs
                 del labels

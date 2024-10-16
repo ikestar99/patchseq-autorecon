@@ -24,8 +24,13 @@ class Vector:
         """
         assert all(isinstance(x, Number) for x in args)
         self.components = tuple(args)
-        self.dimensions = len(self.components)
+        # self.dimensions = len(self.components)
         self.numpy_dims = self.components[::-1]
+
+    def __len__(
+            self
+    ):
+        return len(self.components)
 
     def __getitem__(
             self,
@@ -40,8 +45,8 @@ class Vector:
         if isinstance(other, Number):
             result = [s + other for s in self.components]
         elif isinstance(other, Vector):
-            assert self.dimensions == other.dimensions, (
-                f"dimension error: {self.dimensionsn} and {other.dimensions}")
+            assert len(self) == len(other), (
+                f"dimension error: {len(self)} and {len(other)}")
             result = [s + o for s, o in zip(self.components, other.components)]
         else:
             raise ValueError(
@@ -168,7 +173,7 @@ class BoundingBox:
             [se1 > oe2 for se1, oe2 in zip(self.edge1, other.edge2)] +
             [oe1 > se2 for se2, oe1 in zip(self.edge2, other.edge1)])
 
-    def isSubset(
+    def is_subset(
             self,
             other
     ):
@@ -194,56 +199,61 @@ class BoundingBox:
             [se2 <= oe2 for se2, oe2 in zip(self.edge2, other.edeg2)] +
             [se1 >= oe1 for se1, oe1 in zip(self.edge1, other.edge1)])
 
-    def intersect(self, other):
+    def intersect(
+            self,
+            other
+    ):
         """
         Returns the bounding box given by the intersection of two
-bounding boxes
+        bounding boxes
         :param other: The other bounding box for the intersection
         :type other: BoundingBox
         :return: An bounding box intersecting the two bounding boxes
         :rtype: BoundingBox
         """
-        if self.is_disjoint(other):
-            raise ValueError("The bounding boxes must not be disjoint")
+        assert not self.is_disjoint(other), "Bounding boxes cannot be disjoint"
 
-        # The first edge contains the largest components of the first
-        # edge of the two bounding boxes
-        edge1 = Vector(*map(lambda x, y: max(x, y),
-                            self.get_edges()[0].components,
-                            other.get_edges()[0].components))
+        # largest components of first edges
+        edge1 = Vector(*[
+            max(self.edge1.components[i], other.edge1.components[i])
+            for i in range(len(self.edge1))])
 
-        # The second edge contains the smallest components of the second
-        # edge of the two bounding boxes
-        edge2 = Vector(*map(lambda x, y: min(x, y),
-                            self.get_edges()[1].components,
-                            other.get_edges()[1].components))
-
+        # smallest components of second edges
+        edge2 = Vector(*[
+            min(self.edge2.components[i], other.edge2.components[i])
+            for i in range(len(self.edge1))])
         return BoundingBox(edge1, edge2)
 
-    def __str__(self):
-        edge1, edge2 = self.get_edges()
-        return "Edge1: {}\nEdge2: {}".format(edge1, edge2)
+    def __str__(
+            self
+    ):
+        return f"Edge1: {self.edge1}\nEdge2: {self.edge2}"
 
-    def __add__(self, other):
-        if not isinstance(other, Vector):
-            raise ValueError("other must be a vector instead other is "
-                             + "{}".format(type(other)))
+    def __add__(
+            self,
+            other
+    ):
+        assert isinstance(other, Vector), (
+                f"other must be a vector instead other is {type(other)}")
 
-        edge1, edge2 = self.get_edges()
-        result = BoundingBox(edge1 + other, edge2 + other)
-        return result
+        return BoundingBox(self.edge1 + other, self.edge2 + other)
 
-    def __sub__(self, other):
-        return self.__add__(other*-1)
+    def __sub__(
+            self,
+            other
+    ):
+        return self + (other * -1)
 
-    def __eq__(self, other):
-        if not isinstance(other, BoundingBox):
-            raise ValueError("other must be a BoundingBox")
+    def __eq__(
+            self,
+            other
+    ):
+        assert isinstance(other, BoundingBox), "other must be a BoundingBox"
 
-        s_edge1, s_edge2 = self.get_edges()
-        o_edge1, o_edge2 = other.get_edges()
+        return (self.edge1 == other.edge1) and (self.edge2 == other.edge2)
 
-        return (s_edge1 == o_edge1) and (s_edge2 == o_edge2)
-
-    def __ne__(self, other):
+    def __ne__(
+            self,
+            other
+    ):
         return not (self == other)

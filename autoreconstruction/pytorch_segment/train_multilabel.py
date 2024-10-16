@@ -105,17 +105,17 @@ def run_subset(ckpt, ckpt_dir, log_dir, eps, epochs, num_stacks, net, k, i, idx,
         labels = json_spec.create(spec,stack_size=33)
 
         for n in range(len(inputs)):
-            if not (labels[n].getArray() == 0).all(): # Patches with nonzero labels
-                volume1.append(inputs[n].getArray().astype(np.uint8))
-                volume2.append(labels[n].getArray().astype(np.uint8))
-            elif (inputs[n].getArray() > 110).any(): # Patches with backgroud>threshold
+            if not (labels[n].array == 0).all(): # Patches with nonzero labels
+                volume1.append(inputs[n].array.astype(np.uint8))
+                volume2.append(labels[n].array.astype(np.uint8))
+            elif (inputs[n].array > 110).any(): # Patches with backgroud>threshold
                 idx_bkg.append(n)
 
         # Load random subset (<=num_bkg) of bkg patches
         random.shuffle(idx_bkg)
         num_bkg = 750
-        volume1_bkg = [inputs[n].getArray().astype(np.uint8) for n in idx_bkg[:num_bkg]]
-        volume2_bkg = [labels[n].getArray().astype(np.uint8) for n in idx_bkg[:num_bkg]]
+        volume1_bkg = [inputs[n].array.astype(np.uint8) for n in idx_bkg[:num_bkg]]
+        volume2_bkg = [labels[n].array.astype(np.uint8) for n in idx_bkg[:num_bkg]]
 
         valid_indexes = np.arange(len(volume1))
         np.random.seed(0)
@@ -145,9 +145,9 @@ def run_subset(ckpt, ckpt_dir, log_dir, eps, epochs, num_stacks, net, k, i, idx,
         volume2 = []
         for n in range(len(inputs)):
             # Select patches with zero labels and inputs intensity above threshold=60
-            if (labels[n].getArray() == 0).all() & (inputs[n].getArray() > 60).any():
-                volume1.append(inputs[n].getArray().astype(np.uint8))
-                volume2.append(labels[n].getArray().astype(np.uint8))
+            if (labels[n].array == 0).all() & (inputs[n].array > 60).any():
+                volume1.append(inputs[n].array.astype(np.uint8))
+                volume2.append(labels[n].array.astype(np.uint8))
 
         # Select subset of patches if total number exceeds num_pia
         num_pia = 2250

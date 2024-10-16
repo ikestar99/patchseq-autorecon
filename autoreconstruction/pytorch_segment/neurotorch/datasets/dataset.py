@@ -8,12 +8,11 @@ Created on Thur Sep 19 09:00:00 2024
 
 import numpy as np
 
-from torch.utils.data import Dataset as _Dataset
+from torch.utils.data import Dataset
 
 from abc import abstractmethod
 from scipy.spatial import KDTree
 from numbers import Number
-from functools import reduce
 
 from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
     BoundingBox, Vector)
@@ -23,120 +22,91 @@ class Data:
     """
     An encapsulating object for communicating volumetric data
     """
-    def __init__(self, array: np.ndarray, bounding_box: BoundingBox):
+    def __init__(
+            self,
+            array: np.ndarray,
+            bounding_box: BoundingBox
+    ):
         """
         Initializes a data packet from an Numpy array and its bounding box
 
         :param array: A Numpy array containing the data packet's contents
         :param bounding_box: A bounding box specifying the data packet's
-location in 3D-space
+            location in 3D-space
         """
-        self._setBoundingBox(bounding_box)
-        self._setArray(array)
-
-    def getBoundingBox(self) -> BoundingBox:
-        """
-        Returns the bounding box specifying the data packet's location in
-3D-space
-
-        :return: The bounding box of the data packet's location
-        """
-        return self.bounding_box
-
-    def _setBoundingBox(self, bounding_box: BoundingBox):
-        """
-        Set the bounding box specifying the data packet's location in 3D-space
-
-        :param bounding_box: The bounding box of the data packet's location
-        """
-        if not isinstance(bounding_box, BoundingBox):
-            raise ValueError("bounding_box must have type BoundingBox")
-
         self.bounding_box = bounding_box
+        self.array = array  # row-major order (Z, Y, X)
 
-    def getArray(self) -> np.ndarray:
-        """
-        Retrieves the data packet's contents
+    def __add__(
+            self,
+            other
+    ):
+        assert isinstance(other, Data), "other must have type Data"
+        assert self.bounding_box == other.bounding_box, (
+            "other must have the same bounding box")
 
-        :return: An Numpy ndarray in row-major order (Z, Y, X)
-        """
-        return self.array
+        return Data(self.array + other.array, self.bounding_box)
 
-    def _setArray(self, array):
-        """
-        Sets the data packet's contents
-
-        :param array: An Numpy ndarray in row-major order (Z, Y, X)
-        """
-        self.array = array
-
-    def getSize(self) -> Vector:
-        """
-        Retrieves the size of the data packet
-
-        :return: A vector containing the data packet's size
-        """
-        return self.getBoundingBox().size
-
-    def __add__(self, other):
-        if not isinstance(other, Data):
-            raise ValueError("other must have type Data")
-        if self.getBoundingBox() != other.getBoundingBox():
-            raise ValueError("other must have the same bounding box")
-
-        return Data(self.getArray() + other.getArray(),
-                    self.getBoundingBox())
-
-    def __sub__(self, other):
+    def __sub__(
+            self,
+            other
+    ):
         return self + (-other)
 
-    def __neg__(self):
+    def __neg__(
+            self
+    ):
         return (self * -1)
 
-    def __mul__(self, other):
-        if not isinstance(other, Number):
-            error_string = "other must be a number instead it is a {}"
-            error_string = error_string.format(type(other))
-            raise ValueError(error_string)
+    def __mul__(
+            self,
+            other
+    ):
+        assert isinstance(other, Number), (
+            f"other must be a number instead it is a {type(other)}")
 
-        return Data(self.getArray() * other,
-                    self.getBoundingBox())
+        return Data(self.array * other, self.bounding_box)
 
-    def __div__(self, other):
-        if not isinstance(other, Number):
-            error_string = "other must be a number instead it is a {}"
-            error_string = error_string.format(type(other))
-            raise ValueError(error_string)
+    def __div__(
+            self,
+            other
+    ):
+        assert isinstance(other, Number), (
+            f"other must be a number instead it is a {type(other)}")
 
-        return (self * (1/other))
+        return self * ( 1 /other)
 
 
 class Array:
     """
     A dataset containing a 3D volumetric array
     """
-    def __init__(self, array: np.ndarray, bounding_box: BoundingBox=None,
-                 iteration_size: BoundingBox=BoundingBox(Vector(0, 0, 0),
-                                                         Vector(128, 128, 32)),
-                 stride: Vector=Vector(64, 64, 16)):
+    def __init__(
+            self,
+            array: np.ndarray,
+            bounding_box: BoundingBox = None,
+            iteration_size: BoundingBox = BoundingBox(
+                Vector(0, 0, 0), Vector(128, 128, 32)),
+            stride: Vector = Vector(64, 64, 16)
+    ):
         """
         Initializes a volume with a bounding box and iteration parameters
 
         :param array: A 3D Numpy array
         :param bounding_box: The bounding box encompassing the volume
         :param iteration_size: The bounding box of each data sample in the
-dataset iterable
+            dataset iterable
         :param stride: The stride displacement of each data sample in the
-dataset iterable. The displacement proceeds first from X then to Y then to Z.
+            dataset iterable. The displacement proceeds first from X then to Y
+            then to Z.
         """
-        if isinstance(array, np.ndarray):
-            self._setArray(array)
-        elif isinstance(array, BoundingBox):
-            self.createArray(array)
-        else:
-            raise ValueError("array must be an ndarray or a BoundingBox")
+        # assert type(array) in (np.ndarray, BoundingBox), (
+        #     "array must be an ndarray or a BoundingBox")
 
-        self.setBoundingBox(bounding_box)
+        self.array = array
+        self.bounding_box = (
+            BoundingBox(Vector(0, 0, 0), Vector(*self.array.shape[::-1]))
+            if bounding_box is None else bounding_box)
         self.setIteration(iteration_size=iteration_size,
                           stride=stride)
         super().__init__()
@@ -149,15 +119,15 @@ not exist, then the method raises a ValueError.
         :param bounding_box: The bounding box of the request data sample
         :return: The data sample requested
         """
-        if bounding_box.is_disjoint(self.getBoundingBox()):
+        if bounding_box.is_disjoint(self.bounding_box):
             error_string = ("Bounding box must be inside dataset " +
                             "dimensions instead bounding box is {} while " +
                             "the dataset dimensions are {}")
             error_string = error_string.format(bounding_box,
-                                               self.getBoundingBox())
+                                               self.bounding_box)
             raise ValueError(error_string)
 
-        sub_bounding_box = bounding_box.intersect(self.getBoundingBox())
+        sub_bounding_box = bounding_box.intersect(self.bounding_box)
         array = self.getArray(sub_bounding_box)
 
         before_pad = bounding_box.get_edges()[0] - sub_bounding_box.get_edges()[0]
@@ -177,15 +147,15 @@ given data.
 
         :param data: The data packet to set the volume
         """
-        data_bounding_box = data.getBoundingBox()
-        data_array = data.getArray()
+        data_bounding_box = data.bounding_box
+        data_array = data.array
 
-        if not data_bounding_box.isSubset(self.getBoundingBox()):
+        if not data_bounding_box.is_subset(self.bounding_box):
             raise ValueError("The bounding box must be a subset of the "
                              " volume")
 
         data_edge1, data_edge2 = data_bounding_box.get_edges()
-        array_edge1, array_edge2 = self.getBoundingBox().get_edges()
+        array_edge1, array_edge2 = self.bounding_box.get_edges()
 
         edge1 = data_edge1 - array_edge1
         edge2 = data_edge2 - array_edge1
@@ -202,14 +172,17 @@ the given data by taking the elementwise maximum value.
 
         :param data: The data packet to blend into the volume
         """
-        array = self.get(data.getBoundingBox()).getArray()
-        array = np.maximum(array, data.getArray())
+        array = self.get(data.bounding_box).array
+        array = np.maximum(array, data.array)
 
-        result = Data(array, data.getBoundingBox())
+        result = Data(array, data.bounding_box)
 
         self.set(result)
 
-    def getArray(self, bounding_box: BoundingBox=None) -> np.ndarray:
+    def getArray(
+            self,
+            bounding_box: BoundingBox = None
+    ) -> np.ndarray:
         """
         Retrieves the array contents of the volume. If a bounding box is
 provided, the subsection is returned.
@@ -219,48 +192,17 @@ If the bounding box is outside of the volume, a ValueError is raised.
         """
         if bounding_box is None:
             return self.array
-
         else:
-            if not bounding_box.isSubset(self.getBoundingBox()):
+            if not bounding_box.is_subset(self.bounding_box):
                 raise ValueError("The bounding box must be a subset" +
                                  " of the volume")
 
-            centered_bounding_box = bounding_box - self.getBoundingBox().get_edges()[0]
+            centered_bounding_box = bounding_box - self.bounding_box.get_edges()[0]
             edge1, edge2 = centered_bounding_box.get_edges()
             x1, y1, z1 = edge1.components
             x2, y2, z2 = edge2.components
 
             return self.array[z1:z2, y1:y2, x1:x2]
-
-    def _setArray(self, array):
-        self.array = array
-
-    def getBoundingBox(self) -> BoundingBox:
-        """
-        Retrieves the bounding box of the volume
-
-        :return: The bounding box of the volume
-        """
-        return self.bounding_box
-
-    def setBoundingBox(self, bounding_box: BoundingBox=None,
-                       displacement: Vector=None):
-        """
-        Sets the bounding box of the volume. By default, it sets the bounding
-box to the volume size
-
-        :param bounding_box: The bounding box of the volume
-        :param displacement: The displacement of the bounding box from the
-origin
-        """
-        if bounding_box is None:
-            self.bounding_box = BoundingBox(Vector(0, 0, 0),
-                                            Vector(*self.getArray().shape[::-1]))
-        else:
-            self.bounding_box = bounding_box
-
-        if displacement is not None:
-            self.bounding_box = self.bounding_box + displacement
 
     def setIteration(self, iteration_size: BoundingBox, stride: Vector):
         """
@@ -278,8 +220,8 @@ origin
         if not isinstance(stride, Vector):
             raise ValueError("stride must have type Vector")
 
-        if not iteration_size.isSubset(BoundingBox(Vector(0, 0, 0),
-                                                   self.getBoundingBox().size)):
+        if not iteration_size.is_subset(BoundingBox(Vector(0, 0, 0),
+                                                    self.bounding_box.size)):
             raise ValueError("iteration_size must be smaller than volume size")
 
         self.setIterationSize(iteration_size)
@@ -289,7 +231,7 @@ origin
             return int(round(x))
 
         self.element_vec = Vector(*map(lambda L, l, s: ceil((L-l)/s+1),
-                                       self.getBoundingBox().size.components,
+                                       self.bounding_box.size.components,
                                        self.iteration_size.size.components,
                                        self.stride.components))
 
@@ -336,7 +278,7 @@ origin
         pass
 
 
-class TorchVolume(_Dataset):
+class TorchVolume(Dataset):
     def __init__(self, volume):
         self.setVolume(volume)
         super().__init__()
@@ -349,10 +291,10 @@ class TorchVolume(_Dataset):
             data_list = [self.toTorch(data) for data in self.getVolume()[idx]]
             return data_list
         else:
-            return self.getVolume()[idx].getArray()
+            return self.getVolume()[idx].array
 
     def toTorch(self, data):
-        torch_data = data.getArray().astype(np.float)
+        torch_data = data.array.astype(np.float)
         torch_data = torch_data.reshape(1, *torch_data.shape)
         return torch_data
 
@@ -382,13 +324,13 @@ class Volume:
         return self.array
 
     def request(self, bounding_box):
-        return self.getArray().get(bounding_box)
+        return self.array.get(bounding_box)
 
     def set(self, data: Data):
-        self.getArray().set(data)
+        self.array.set(data)
 
     def blend(self, data: Data):
-        self.getArray().blend(data)
+        self.array.blend(data)
 
     def setIteration(self, iteration_size: BoundingBox, stride: Vector):
         if not isinstance(iteration_size, BoundingBox):
@@ -400,8 +342,8 @@ class Volume:
         if not isinstance(stride, Vector):
             raise ValueError("stride must have type Vector")
 
-        if not iteration_size.isSubset(BoundingBox(Vector(0, 0, 0),
-                                                   self.getBoundingBox().size)):
+        if not iteration_size.is_subset(BoundingBox(Vector(0, 0, 0),
+                                                    self.getBoundingBox().size)):
             raise ValueError("iteration_size must be smaller than volume size " +
                              "instead the iteration size is {} ".format(iteration_size.size) +
                              "and the volume size is {}".format(self.getBoundingBox().size))
@@ -501,7 +443,7 @@ given data.
 
         :param idx: The index of the data sample
         """
-        return self.getArray()[idx]
+        return self.array[idx]
 
     def __iter__(self):
         """
@@ -528,7 +470,7 @@ given data.
         if self.valid_data is not None:
             self.valid_data = []
             for i in range(len(self)):
-                if not (self[i].getArray() == 0).all():
+                if not (self[i].array == 0).all():
                     self.valid_data.append(i)
 
         return self.valid_data
@@ -545,7 +487,7 @@ class AlignedVolume(Volume):
         self.valid_data = None
 
     def getBoundingBox(self):
-        return self.getVolumes()[0].getBoundingBox()
+        return self.getVolumes()[0].bounding_box
 
     def setVolumes(self, volumes):
         self.volumes = volumes
@@ -579,7 +521,7 @@ class AlignedVolume(Volume):
         if self.valid_data is None:
             self.valid_data = []
             for i in range(len(self)):
-                if not (self.getVolumes()[1][i].getArray() == 0).all():
+                if not (self.getVolumes()[1][i].array == 0).all():
                     self.valid_data.append(i)
 
         return self.valid_data
@@ -624,7 +566,7 @@ class PooledVolume(Volume):
         return pos
 
     def _rebuildIndexes(self):
-        edge1_list = [volume.getBoundingBox().get_edges()[0].components
+        edge1_list = [volume.bounding_box.get_edges()[0].components
                       for volume in self.volumes]
 
         self.edge1_list = KDTree(edge1_list)
@@ -661,14 +603,14 @@ class PooledVolume(Volume):
         stack_disjoint = list(set(indexes) - set([i for i, v in self.stack]))
 
         for volume in stack_volumes:
-            sub_bbox = bounding_box.intersect(volume.getBoundingBox())
+            sub_bbox = bounding_box.intersect(volume.bounding_box)
             data.append(volume.get(sub_bbox))
 
         for index in stack_disjoint:
             volume = self.volumes[index]
             i = self._pushStack(index, volume)
 
-            sub_bbox = bounding_box.intersect(volume.getBoundingBox())
+            sub_bbox = bounding_box.intersect(volume.bounding_box)
             data.append(volume.get(sub_bbox))
 
         shape = bounding_box.numpy_dims
@@ -678,10 +620,10 @@ class PooledVolume(Volume):
                                                     bounding_box.size),
                         stride=bounding_box.size)
         [array.set(item) for item in data]
-        return Data(array.getArray(), bounding_box)
+        return Data(array.array, bounding_box)
 
     def set(self, data: Data):
-        indexes = self._queryBoundingBox(data.getBoundingBox())
+        indexes = self._queryBoundingBox(data.bounding_box)
 
         data = []
         for index in indexes:
@@ -731,7 +673,7 @@ class PooledVolume(Volume):
 
         element_vec = Vector(*element_vec)
         bounding_box = volume.iteration_size+volume.stride*element_vec \
-                       + volume.getBoundingBox().get_edges()[0]
+                       + volume.bounding_box.edge1
 
         return bounding_box
 
@@ -746,7 +688,7 @@ class PooledVolume(Volume):
         if self.valid_data is None:
             self.valid_data = []
             for i in range(len(self)):
-                if not (self[i].getArray() == 0).all():
+                if not (self[i].array == 0).all():
                     self.valid_data.append(i)
 
         return self.valid_data
