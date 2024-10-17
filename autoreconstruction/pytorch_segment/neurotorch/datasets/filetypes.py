@@ -46,7 +46,7 @@ containing TIFF files
         return self.tiff_file
 
     def get(self, bounding_box):
-        return self.getArray().get(bounding_box)
+        return self.array.get(bounding_box)
 
     def __enter__(self):
         if os.path.isfile(self.getFile()):
@@ -69,18 +69,18 @@ containing TIFF files
         else:
             raise IOError("{} was not found".format(self.getFile()))
 
-        array = Array(array, bounding_box=self.getBoundingBox(),
-                      iteration_size=self.getIterationSize(),
-                      stride=self.getStride())
-        self.setArray(array)
+        array = Array(array, bounding_box=self.bounding_box,
+                      iteration_size=self.iteration_size,
+                      stride=self.stride)
+        self.array = array
 
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.setArray(None)
+        self.array = None
 
     def _indexToBoundingBox(self, idx):
-        return self.getArray()._indexToBoundingBox(idx)
+        return self.array._indexToBoundingBox(idx)
 
 
 class Hdf5Volume(Volume):
@@ -116,10 +116,10 @@ volume dataset
         if os.path.isfile(self.getFile()):
             with h5py.File(self.getFile(), 'r') as f:
                 array = f[self.getDataset()].value
-                array = Array(array, bounding_box=self.getBoundingBox(),
-                              iteration_size=self.getIterationSize(),
-                              stride=self.getStride())
-                self.setArray(array)
+                array = Array(array, bounding_box=self.bounding_box,
+                              iteration_size=self.iteration_size,
+                              stride=self.stride)
+                self.array = array
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.setArray(None)
+        self.array = None

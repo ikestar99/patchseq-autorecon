@@ -70,7 +70,7 @@ class Predictor:
         for ch in range(3):
             data_list = [Data(tensor[i][ch+1], bounding_box) for i, bounding_box in enumerate(bounding_boxes)]
             for data in data_list:
-                output_volume[ch].blend(data)
+                output_volume[ch].array.blend(data)
 
     def toArray(self, data):
         torch_data = data.array.astype(float)

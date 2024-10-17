@@ -43,8 +43,8 @@ def predict(checkpoint, test_dir, out_dir, bb, num_parts):
             # Predict
             predictor = Predictor(net, checkpoint, gpu_device=0)
             # Output_volume is a list (len3) of Arrays for each of 3 foreground channels (soma, axon, dendrite)
-            output_volume = [Array(np.zeros(inputs.getBoundingBox().numpy_dims, dtype=np.uint8)) for _ in range(3)]
-            print('bb0', inputs.getBoundingBox())
+            output_volume = [Array(np.zeros(inputs.bounding_box.numpy_dims, dtype=np.uint8)) for _ in range(3)]
+            print('bb0', inputs.bounding_box)
             predictor.run(inputs, output_volume)
                             
         if not os.path.isdir(out_dir):

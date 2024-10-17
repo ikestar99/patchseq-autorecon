@@ -60,8 +60,8 @@ def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files
                 # Predict
                 predictor = Predictor(net, checkpoint, gpu_device=gpu)
                 # Output_volume is a list (len3) of Arrays for each of 3 foreground channels (soma, axon, dendrite)
-                output_volume = [Array(np.zeros(inputs.getBoundingBox().numpy_dims, dtype=np.uint8)) for _ in range(3)]
-                print('bb0', inputs.getBoundingBox())
+                output_volume = [Array(np.zeros(inputs.bounding_box.numpy_dims, dtype=np.uint8)) for _ in range(3)]
+                print('bb0', inputs.bounding_box)
                 predictor.run(inputs, output_volume)      
                 
                 for ch in range(3):

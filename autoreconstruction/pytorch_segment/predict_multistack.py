@@ -59,8 +59,8 @@ def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files
                 
                 # Predict
                 predictor = Predictor(net, checkpoint, gpu_device=gpu)
-                output_volume = Array(-np.inf*np.ones(inputs.getBoundingBox().numpy_dims, dtype=np.float32))
-                print('bb0', inputs.getBoundingBox())
+                output_volume = Array(-np.inf*np.ones(inputs.bounding_box.numpy_dims, dtype=np.float32))
+                print('bb0', inputs.bounding_box)
                 predictor.run(inputs, output_volume)      
                 # Convert to probability map and save
                 probability_map = 1/(1+np.exp(-output_volume.getArray()))

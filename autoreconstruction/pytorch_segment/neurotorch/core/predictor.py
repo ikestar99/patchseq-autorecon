@@ -64,7 +64,7 @@ class Predictor:
 
         data_list = self.toData(outputs, bounding_boxes)
         for data in data_list:
-            output_volume.blend(data)
+            output_volume.array.blend(data)
 
     def toArray(self, data):
         torch_data = data.array.astype(np.float)
