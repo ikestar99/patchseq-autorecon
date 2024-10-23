@@ -116,7 +116,7 @@ if __name__ == "__main__":
         preprocess=False,  # ran successfully
         chunk_z=chunk_z,
         chunk_ds=chunk_ds,
-        chunk_xy=chunk_ds * chunk_scalar,
+        chunk_xy=chunk_scalar,
         segment=False,  # ran successfully
         skeleton=False,  # ran successfully
         swc=True  # ran successfully on specimen 2112

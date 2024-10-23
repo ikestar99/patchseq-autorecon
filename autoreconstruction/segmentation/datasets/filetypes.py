@@ -8,15 +8,12 @@ Created on Thur Sep 19 09:00:00 2024
 
 import os.path
 import h5py
-import numpy as np
 import fnmatch
 import tifffile as tif
 
-from abc import abstractmethod
-
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import (
-    Volume, Array, Data)
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+from autoreconstruction.segmentation.datasets.dataset import (
+    Volume, Array)
+from autoreconstruction.segmentation.datasets.datatypes import (
     BoundingBox, Vector)
 
 

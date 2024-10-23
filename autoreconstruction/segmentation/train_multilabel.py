@@ -8,13 +8,12 @@ Created on Thur Sep 19 09:00:00 2024
 
 import os
 import numpy as np
-import torch
 import torch.optim as optim
 import random
 
-from autoreconstruction.pytorch_segment.neurotorch.datasets.specification import JsonSpec
-from autoreconstruction.pytorch_segment.neurotorch.core.trainer_multilabel import Trainer
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
+from autoreconstruction.segmentation.datasets import JsonSpec
+from autoreconstruction.segmentation.core import Trainer
+from autoreconstruction.segmentation.nets import RSUNetMulti
 
 
 def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks, augmentation, pia_dir):

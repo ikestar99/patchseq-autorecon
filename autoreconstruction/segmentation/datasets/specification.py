@@ -10,11 +10,11 @@ import os
 import json
 from abc import ABC, abstractmethod
 
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import (
-    AlignedVolume, Array, PooledVolume)
-from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import (
+from autoreconstruction.segmentation.datasets.dataset import (
+    PooledVolume)
+from autoreconstruction.segmentation.datasets.filetypes import (
     TiffVolume, Hdf5Volume)
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+from autoreconstruction.segmentation.datasets.datatypes import (
     BoundingBox, Vector)
 
 

@@ -256,4 +256,4 @@ class BoundingBox:
             self,
             other
     ):
-        return not (self == other)
+        return not self == other

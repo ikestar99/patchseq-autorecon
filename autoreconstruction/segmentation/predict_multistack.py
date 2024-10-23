@@ -7,9 +7,7 @@ Created on Thur Sep 19 09:00:00 2024
 
 
 import os
-import glob
 import numpy as np
-import torch
 import pandas as pd
 import natsort
 import tifffile as tif
@@ -17,11 +15,11 @@ import tifffile as tif
 from datetime import date
 from multiprocessing import Pool
 
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNet import RSUNet
-from autoreconstruction.pytorch_segment.neurotorch.core.predictor import Predictor
-from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+from autoreconstruction.segmentation.nets import RSUNetMulti
+from autoreconstruction.segmentation.core.predictor import Predictor
+from autoreconstruction.segmentation.datasets import TiffVolume
+from autoreconstruction.segmentation.datasets.dataset import Array
+from autoreconstruction.segmentation.datasets import (
     BoundingBox, Vector)
 
 
@@ -47,7 +45,7 @@ def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files
    
     # Step 2. Run segmentation 
     try:
-        net = RSUNet()
+        net = RSUNetMulti()
         count=0
         number_of_small_segments = len([ff for ff in os.listdir(chunk_dir) if '.tif' in ff])
         print('I think there are {} chunk tiff files in {}'.format(number_of_small_segments,chunk_dir))

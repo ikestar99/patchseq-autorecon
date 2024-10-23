@@ -10,11 +10,11 @@ import os
 import numpy as np
 import tifffile as tif
 
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
-from autoreconstruction.pytorch_segment.neurotorch.core.predictor import Predictor
-from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (BoundingBox, Vector)
+from autoreconstruction.segmentation.nets import RSUNetMulti
+from autoreconstruction.segmentation.core.predictor import Predictor
+from autoreconstruction.segmentation.datasets import TiffVolume
+from autoreconstruction.segmentation.datasets.dataset import Array
+from autoreconstruction.segmentation.datasets import (BoundingBox, Vector)
 
 
 def predict(checkpoint, test_dir, out_dir, bb, num_parts):

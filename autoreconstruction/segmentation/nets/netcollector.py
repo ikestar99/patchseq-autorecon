@@ -6,6 +6,7 @@ Created on Thur Sep 19 09:00:00 2024
 """
 
 
+import torch.nn as nn
 import importlib
 
 
@@ -15,14 +16,18 @@ class NetCollector(object):
     """
     module_list = dict()
 
-    def add_module(cls, module, identifier):
+    @classmethod
+    def add_module(
+            cls,
+            module: nn.Module,
+            identifier: str
+    ):
         NetCollector.module_list[identifier] = module
 
-    def get_module(cls, identifier):
+    @classmethod
+    def get_module(
+            cls,
+            identifier: str
+    ):
         importlib.import_module("neurotorch.nets." + identifier)
-
-        try:
-            return NetCollector.module_list[identifier]
-        except KeyError:
-            raise ValueError("{} could not be found in the" +
-                             " NetCollector".format(identifier))
+        return NetCollector.module_list[identifier]

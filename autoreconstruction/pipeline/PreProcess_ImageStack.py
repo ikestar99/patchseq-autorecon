@@ -34,7 +34,6 @@ def check_for_size_limit(
         s = round(size_bytes / p, 2)
         return f"{s} {size_name[i]}"
 
-
     memory = psutil.virtual_memory()._asdict()['available']
     for f in files:
         size = os.path.getsize(f)
@@ -48,7 +47,7 @@ def int_round(
         x: float,
         base: int  # base=64
 ):
-    return base * (x // base)
+    return int(base * (x // base))
 
 
 def process_specimen(
@@ -87,10 +86,10 @@ def process_specimen(
     :param specimen_dir: root directory for specimen
     :param raw_single_tif_dir: input directory of single tif images
     :param invert_image_color: boolean to invert images or not
+    :param dz: depth of each Z substack
+    param ds: voxel scale factor in y-x plane
+    param dc:
     """
-
-    error_list = []
-
     # Step 1 was removed because it was not useful for consumers outside AIBS
     # Step 2 chooses last file in list of tif files, extracts crop dimensions
     list_of_files = natsort.natsorted(raw_single_tif_dir.glob("*.tif"))
@@ -100,17 +99,13 @@ def process_specimen(
     chunk_dir = specimen_dir.joinpath(f"Chunks_of_{dz}")
     chunk_dir.mkdir(parents=True, exist_ok=True)
 
-    # raw image dimensions
-    y_raw, x_raw = tf.imread(list_of_files[0]).shape
-
     # dimensions of largest crop divisible by base arg factor
+    y_raw, x_raw = tf.imread(list_of_files[0]).shape[-2:]
     y_1, x_1 = int_round(y_raw, base=ds), int_round(x_raw, base=ds)
 
     # starting image coordinates for a center crop
     y_0, x_0 = (y_raw - y_1) // 2, (x_raw - x_1) // 2
-    if (y_raw != y_1) or (x_raw != x_1):
-        print(f"{ids} coordinates for x-y crop are not divisible by 64")
-        error_list.append(f"{ids} Step 2")
+    print(f"old shape: h{y_raw}, w{x_raw}\nnew shape: h{y_1}, w{x_1})")
 
     # Step 3. Crop, invert, chunk, and generate max proj of each image
     z_proj = None
@@ -125,7 +120,7 @@ def process_specimen(
         stack = 255 - stack if invert_image_color else stack
 
         z_temp = np.max(stack, axis=0)
-        z_proj = z_temp[0] if z_proj is None else np.maximum(z_proj, z_temp)
+        z_proj = z_temp if z_proj is None else np.maximum(z_proj, z_temp)
         y_proj += [np.max(stack, axis=1)]
         x_proj += [np.max(stack, axis=2)]
 
@@ -145,8 +140,7 @@ def process_specimen(
         specimen_dir.joinpath("Single_Tif_Images_X_Mip.tif"),
         np.concatenate(x_proj, axis=0))
 
-    #Step 9. Generate The Bounding Box File (0 0 0 y x chunk_size)
+    # Step 9. Generate The Bounding Box File (0 0 0 y x chunk_size)
     pd.DataFrame(
         {"bound_boxing": [0, 0, 0, min(x_1, dc), min(y_1, dc), dz]}).to_csv(
         specimen_dir.joinpath(f"bbox_{ids}.csv"))
-    return error_list

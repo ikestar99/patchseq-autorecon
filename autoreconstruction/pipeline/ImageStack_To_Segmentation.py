@@ -13,22 +13,20 @@ import natsort
 import tifffile as tif
 
 from pathlib import Path
-from datetime import date
 
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
-from autoreconstruction.pytorch_segment.neurotorch.core.predictor_multilabel import Predictor
-from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+from autoreconstruction.segmentation.nets import RSUNetMulti
+from autoreconstruction.segmentation.core.predictor_multilabel import Predictor
+from autoreconstruction.segmentation.datasets.filetypes import TiffVolume
+from autoreconstruction.segmentation.datasets.dataset import Array
+from autoreconstruction.segmentation.datasets.datatypes import (
     BoundingBox, Vector)
 
 
 def validate(
-        checkpoint,
-        specimen_dir,
-        chunk_dir,
-        raw_single_tif_dir,
-        bb,
+        checkpoint: Path,
+        specimen_id: str,
+        specimen_dir: Path,
+        raw_single_tif_dir: Path,
         ids,
         gpu,
 ):
@@ -49,6 +47,9 @@ def validate(
     """
     error_list = []
     print(f"Using checkpoint file: {checkpoint}")
+    chunk_dir = specimen_dir.joinpath("Chunks_of_32")
+    bb = pd.read_csv(
+        specimen_dir.joinpath(f"bbox_{specimen_id}.csv")).bound_boxing.values
 
     # Step 1. make segmentation output directory
     seg_dir = specimen_dir.joinpath("Segmentation")
@@ -78,55 +79,33 @@ def validate(
                     count[ch] +=1
                     tif.imsave(os.path.join(ch_dir,'%03d.tif'%(count[ch])), probability_map[i,:,:])
 
-    #Step 3. Remove Duplicate Files if necessary 
-    try:
-        
-        number_of_individual_tiffs = len([f for f in os.listdir(raw_single_tif_dir) if '.tif' in f])
-        for ch in range(3):
-            ch_dir = os.path.join(seg_dir,'ch%d'%(ch+1))
-            number_of_segmented_tiffs =  len([f for f in os.listdir(ch_dir) if '.tif' in f])
-            print('Number of individual tiffs = {}'.format(number_of_individual_tiffs))
-            print('Number of segmented tiffs = {}'.format(number_of_segmented_tiffs))
-
-            number_of_duplicates = number_of_segmented_tiffs-number_of_individual_tiffs
-                    #assigning the number of duplicates to the difference in length between segmented dir and individual tiff dir. 
-            if number_of_duplicates == 0: 
-                print('no duplicates were made')
-                print('num duplicates = {}'.format(number_of_duplicates))
-
-            else:
-                print('num duplicates = {}'.format(number_of_duplicates))
-                #this means that list_of_segmented_files[-32:-number_of_suplicates] can be erased because of part 7 in preprocessing
-                list_of_segmented_files = [x for x in natsort.natsorted(os.listdir(ch_dir)) if '.tif' in x]
-                second_index = 32-number_of_duplicates
-                duplicate_segmentations = list_of_segmented_files[-32:-(second_index)] 
-                print(duplicate_segmentations)       
-
-                for files in duplicate_segmentations:
-                    os.remove(os.path.join(ch_dir,files))
-    except:
-        print('error with removing files')
-        error_list.append(str(ids)+' -removing duplicates')
-
+    # #Step 3. Remove Duplicate Files if necessary
+    # try:
+    #
+    #     number_of_individual_tiffs = len([f for f in os.listdir(raw_single_tif_dir) if '.tif' in f])
+    #     for ch in range(3):
+    #         ch_dir = os.path.join(seg_dir,'ch%d'%(ch+1))
+    #         number_of_segmented_tiffs =  len([f for f in os.listdir(ch_dir) if '.tif' in f])
+    #         print('Number of individual tiffs = {}'.format(number_of_individual_tiffs))
+    #         print('Number of segmented tiffs = {}'.format(number_of_segmented_tiffs))
+    #
+    #         number_of_duplicates = number_of_segmented_tiffs-number_of_individual_tiffs
+    #                 #assigning the number of duplicates to the difference in length between segmented dir and individual tiff dir.
+    #         if number_of_duplicates == 0:
+    #             print('no duplicates were made')
+    #             print('num duplicates = {}'.format(number_of_duplicates))
+    #
+    #         else:
+    #             print('num duplicates = {}'.format(number_of_duplicates))
+    #             #this means that list_of_segmented_files[-32:-number_of_suplicates] can be erased because of part 7 in preprocessing
+    #             list_of_segmented_files = [x for x in natsort.natsorted(os.listdir(ch_dir)) if '.tif' in x]
+    #             second_index = 32-number_of_duplicates
+    #             duplicate_segmentations = list_of_segmented_files[-32:-(second_index)]
+    #             print(duplicate_segmentations)
+    #
+    #             for files in duplicate_segmentations:
+    #                 os.remove(os.path.join(ch_dir,files))
+    # except:
+    #     print('error with removing files')
+    #     error_list.append(str(ids)+' -removing duplicates')
     return error_list
-
-
-def main(ckpt, specimen_dir, raw_single_tif_dir, specimen_id, gpu, **kwargs ):
-    """
-    ckpt = ags.fields.InputFile(description='checkpoint file to use for segmentation ')
-    specimen_dir = ags.fields.InputDir(description="specimen directory")
-    specimen_id = ags.fields.Str(default=None,description="specimen id")
-    gpu = ags.fields.Int(default=0, description = "gpu to use")
-    raw_single_tif_dir = ags.fields.InputDir(description='raw image directory')
-    """
-    today = date.today().strftime("%b_%d_%Y")
-    #chunk dir
-    chunk_dir = os.path.join(specimen_dir,'Chunks_of_32')
-
-    #bboxes
-    bbox_path = os.path.join(specimen_dir,'bbox_{}.csv'.format(specimen_id))
-    df = pd.read_csv(bbox_path)
-    bb = df.bound_boxing.values
-
-    #validate
-    validate(ckpt, specimen_dir, chunk_dir, raw_single_tif_dir, bb, specimen_id, [], gpu)

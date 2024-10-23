@@ -7,8 +7,6 @@ Created on Thur Sep 19 09:00:00 2024
 
 
 import os
-import glob
-import torch
 import numpy as np
 import tifffile as tif
 
@@ -18,11 +16,11 @@ import pandas as pd
 from datetime import date
 from multiprocessing import Pool
 
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNetMulti import RSUNetMulti
-from autoreconstruction.pytorch_segment.neurotorch.core.predictor_multilabel import Predictor
-from autoreconstruction.pytorch_segment.neurotorch.datasets.filetypes import TiffVolume
-from autoreconstruction.pytorch_segment.neurotorch.datasets.dataset import Array
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (BoundingBox, Vector)
+from autoreconstruction.segmentation.nets import RSUNetMulti
+from autoreconstruction.segmentation.core.predictor_multilabel import Predictor
+from autoreconstruction.segmentation.datasets import TiffVolume
+from autoreconstruction.segmentation.datasets.dataset import Array
+from autoreconstruction.segmentation.datasets import (BoundingBox, Vector)
 
 
 def predict(checkpoint, specimen_dir, chunk_dir, bb, ids, error_list, gpu, files_per_chunk):

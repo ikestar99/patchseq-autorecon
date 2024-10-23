@@ -13,7 +13,7 @@ from scipy.spatial import KDTree
 from torch.utils.data import Dataset
 from numbers import Number
 
-from autoreconstruction.pytorch_segment.neurotorch.datasets.datatypes import (
+from autoreconstruction.segmentation.datasets.datatypes import (
     BoundingBox, Vector)
 
 
@@ -55,7 +55,7 @@ class Data:
     def __neg__(
             self
     ):
-        return (self * -1)
+        return self * -1
 
     def __mul__(
             self,
@@ -296,28 +296,40 @@ class Volume:
         self.array = None
 
     @abstractmethod
-    def __enter__(self):
+    def __enter__(
+            self
+    ):
         """
         Loads the dataset into memory
         """
         pass
 
     @abstractmethod
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+            self,
+            exc_type,
+            exc_value,
+            traceback
+    ):
         """
         Unloads the dataset from memory
         """
         pass
 
-    def __len__(self) -> int:
+    def __len__(
+            self
+    ):
         """
         Returns the length of the dataset
 
         :return: The dataset length
         """
-        return self.element_vec[0]*self.element_vec[1]*self.element_vec[2]
+        return self.element_vec[0] * self.element_vec[1] * self.element_vec[2]
 
-    def __getitem__(self, idx: int):
+    def __getitem__(
+            self,
+            idx: int
+    ):
         """
         Returns the data sample at index idx from the dataset
 
@@ -325,7 +337,9 @@ class Volume:
         """
         return self.array[idx]
 
-    def __iter__(self):
+    def __iter__(
+            self
+    ):
         """
         Returns an iterable of the dataset
 
@@ -334,7 +348,9 @@ class Volume:
         self.index = 0
         return self
 
-    def __next__(self):
+    def __next__(
+            self
+    ):
         """
         Retrieves the next data sample from the dataset
         :return: The next data sample
@@ -343,8 +359,8 @@ class Volume:
             result = self.__getitem__(self.index)
             self.index += 1
             return result
-        else:
-            raise StopIteration
+
+        raise StopIteration
 
     def setIteration(
             self,
@@ -360,7 +376,7 @@ class Volume:
         self.iteration_size = iteration_size
         self.stride = stride
         self.element_vec = Vector(*map(
-            lambda L, l, s: int(round((L-l)/s+1)),
+            lambda r0, r1, r2: int(round((r0 - r1) / r2 + 1)),
             self.bounding_box.size.components,
             self.iteration_size.size.components, self.stride.components))
         self.index = 0
@@ -404,69 +420,60 @@ class Volume:
         """
         pass
 
-    def getValidData(self):
-        if self.valid_data is not None:
-            self.valid_data = []
-            for i in range(len(self)):
-                if not (self[i].array == 0).all():
-                    self.valid_data.append(i)
-
+    def getValidData(
+            self
+    ):
+        self.valid_data = self.valid_data if self.valid_data is None else [
+            i for i in range(len(self)) if not (self[i].array == 0).all()]
         return self.valid_data
 
 
 class AlignedVolume(Volume):
     def __init__(self, volumes, iteration_size=None, stride=None):
-        if iteration_size is None:
-            iteration_size = volumes[0].iteration_size
-        if stride is None:
-            stride = volumes[0].stride
-        self.setVolumes(volumes)
+        iteration_size = (
+            volumes[0].iteration_size if iteration_size is None
+            else iteration_size)
+        stride = volumes[0].stride if stride is None else stride
+        self.volumes = volumes
         self.setIteration(iteration_size, stride)
         self.valid_data = None
 
     def getBoundingBox(self):
-        return self.getVolumes()[0].bounding_box
-
-    def setVolumes(self, volumes):
-        self.volumes = volumes
+        return self.volumes[0].bounding_box
 
     def addVolume(self, volume):
         self.volumes.append(volume)
 
-    def getVolumes(self):
-        return self.volumes
-
     def setIteration(self, iteration_size, stride):
-        for volume in self.getVolumes():
+        for volume in self.volumes:
             volume.iteration_size = iteration_size
             volume.stride = stride
 
     def get(self, bounding_box):
         result = [volume.get(bounding_box)
-                  for volume in self.getVolumes()]
+                  for volume in self.volumes]
         return result
 
     def set(self, array, bounding_box):
         pass
 
     def __len__(self):
-        return len(self.getVolumes()[0])
+        return len(self.volumes[0])
 
     def __getitem__(self, idx):
-        result = [volume[idx] for volume in self.getVolumes()]
-        return result
+        return [volume[idx] for volume in self.volumes]
 
     def getValidData(self):
         if self.valid_data is None:
             self.valid_data = []
             for i in range(len(self)):
-                if not (self.getVolumes()[1][i].array == 0).all():
+                if not (self.volumes[1][i].array == 0).all():
                     self.valid_data.append(i)
 
         return self.valid_data
 
     def _indexToBoundingBox(self, idx):
-        bounding_box = self.getVolumes()[0]._indexToBoundingBox(idx)
+        bounding_box = self.volumes[0]._indexToBoundingBox(idx)
 
         return bounding_box
 

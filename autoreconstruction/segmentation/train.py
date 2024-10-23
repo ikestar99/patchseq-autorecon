@@ -8,12 +8,11 @@ Created on Thur Sep 19 09:00:00 2024
 
 import os
 import numpy as np
-import torch
 import torch.optim as optim
 
-from autoreconstruction.pytorch_segment.neurotorch.datasets.specification import JsonSpec
-from autoreconstruction.pytorch_segment.neurotorch.core.trainer import Trainer
-from autoreconstruction.pytorch_segment.neurotorch.nets.RSUNet import RSUNet
+from autoreconstruction.segmentation.datasets import JsonSpec
+from autoreconstruction.segmentation.core import Trainer
+from autoreconstruction.segmentation.nets import RSUNetMulti
 
 
 def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks):
@@ -32,7 +31,7 @@ def train(ckpt, ckpt_dir, log_dir, json_dir, eps, epochs, num_stacks):
     labels_list.sort()    
 
     # Initialize network and json specification
-    net = RSUNet()
+    net = RSUNetMulti()
     json_spec = JsonSpec()
 
     # Define experiment name from arguments
